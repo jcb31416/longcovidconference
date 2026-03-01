@@ -1,0 +1,63 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+      {
+        // Debug Next.js API (Backend)
+        "type": "node",
+        "request": "launch",
+        "name": "Debug Next.js API",
+        "runtimeExecutable": "npx",
+        "runtimeArgs": ["next", "dev", "--webpack"],
+        "cwd": "${workspaceFolder}",
+        "outFiles": ["${workspaceFolder}/.next/**/*.js"],
+        "skipFiles": ["<node_internals>/**"],
+        "console": "integratedTerminal",
+        "env": {
+          "NODE_PATH": "${workspaceFolder}/src"
+        }
+      },
+
+      {
+        // Debug the currently open file
+        "type": "node",
+        "request": "launch",
+        "name": "Debug file alone",
+        "program": "${file}",
+        "runtimeExecutable": "node",
+        "runtimeArgs":  [
+            "--experimental-loader",           // flag
+            "./alias-loader.mjs",              // ruta relativa a "cwd"
+            "--experimental-repl-await"
+          ], // Pass the flag here
+        "console": "integratedTerminal",  //"internalConsole" //"integratedTerminal",
+        "cwd": "${workspaceFolder}",
+        "envFile": "${workspaceFolder}/.env",
+        "env": {
+          "NODE_PATH": "${workspaceFolder}/src",
+        }
+      },
+
+      {
+        // Debug frontend components in Chrome
+        "type": "chrome",
+        "request": "launch",
+        "name": "Debug Frontend in Chrome",
+        "url": "http://localhost:3000", // The URL of your Next.js app
+        "webRoot": "${workspaceFolder}",
+        "sourceMaps": true,
+        "skipFiles": ["<node_internals>/**"],
+        "trace": true
+      },
+
+      {
+        // Attach to an already running Chrome session
+        "type": "chrome",
+        "request": "attach",
+        "name": "Attach to Chrome",
+        "port": 9222, // Chrome debugging port
+        "webRoot": "${workspaceFolder}",
+        "sourceMaps": true,
+        "skipFiles": ["<node_internals>/**"]
+      }
+    ]
+  }

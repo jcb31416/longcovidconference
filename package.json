@@ -1,0 +1,20 @@
+{
+  "name": "regenweb",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "next dev --webpack",
+    "script": "set \"NODE_PATH=./src\" && node --experimental-loader ./alias-loader.mjs ./src/scripts/run.js",
+    "scripts-comment": "ejemplo arranque: >npm run script -- ./src/test/hi.js  .. o por ejemplo..  npm run script -- ./src/test/chain/t_9.js",
+    "build": "next build --webpack",
+    "start": "next start",
+    "lint": "next lint"
+  },
+  "dependencies": {
+    "next": "^16.1.0",
+    "react": "^19.2.3",
+    "react-dom": "^19.2.3"
+  },
+  "devDependencies": {}
+}

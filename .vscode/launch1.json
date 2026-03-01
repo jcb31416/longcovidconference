@@ -1,0 +1,30 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+      {
+        // Your original config for Next.js
+        "type": "node",
+        "request": "launch",
+        "name": "Debug Next.js API",
+        "runtimeExecutable": "npx",
+        "runtimeArgs": ["next", "dev"],
+        "cwd": "${workspaceFolder}",
+        "outFiles": ["${workspaceFolder}/.next/**/*.js"],
+        "skipFiles": ["<node_internals>/**"],
+        "console": "integratedTerminal",
+        "env": {
+            "NODE_PATH": "${workspaceFolder}/src" // esta opc no fun. era para import lib propias dirmt dsd src
+        }
+      },
+      {
+        // New config for debugging the *currently open file*
+        "type": "node",
+        "request": "launch",
+        "name": "Debug current file",
+        "program": "${file}",        // <--- Key line: uses the active file
+        "console": "integratedTerminal",
+        "cwd": "${workspaceFolder}",
+        "envFile": "${workspaceFolder}/.env" // loads variables from .env:
+      }
+    ]
+  }
