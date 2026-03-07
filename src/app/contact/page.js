@@ -20,8 +20,8 @@ export default function ContactPage() {
     const int_max                       = 300;
 
     const [dic_form, setForm]           = useState({
-        field                           : "business",
-        tag                             : "sponsor",
+        field                           : "speaker",
+        tag                             : "science",
         observations                    : "",
     });
 
@@ -108,8 +108,8 @@ export default function ContactPage() {
                                     value={dic_form.field}
                                     onChange={fun_set("field")}
                                 >
-                                    <option value="business">business</option>
                                     <option value="science">science</option>
+                                    <option value="business">business</option>
                                     <option value="support">support</option>
                                     <option value="other">other</option>
                                 </select>
@@ -133,7 +133,6 @@ export default function ContactPage() {
                                     value={dic_form.tag}
                                     onChange={fun_set("tag")}
                                 >
-                                    <option value="sponsor">sponsor</option>
                                     <option value="speaker">speaker</option>
                                     <option value="press">press</option>
                                     <option value="general">general</option>
