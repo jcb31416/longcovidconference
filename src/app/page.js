@@ -6,6 +6,7 @@ import { motion }                     from "framer-motion";
 import { useEffect, useMemo, useRef, useState } from "react";
 
 import GlassPanel                     from "@/components/GlassPanel.jsx";
+import Virusbglayer                   from "@/components/Virusbglayer.jsx";
 import { fun_fetch }                  from "@/utils/front/mod_front.js";
 
 const str_pdf_path                    = "/cartel congreso_LCDD2026.pdf";
@@ -16,22 +17,28 @@ const str_cn_btn                      =
     "hover:bg-white/10 active:scale-[0.99] " +
     "focus:outline-none focus-visible:ring-2 focus-visible:ring-white/30";
 
-const str_cn_btn_wide                 = str_cn_btn + " w-[160px]";
+const str_cn_btn_wide                 = str_cn_btn + " w-full max-w-[160px]";
+
+
 
 const arr_ticker_items                = [
     { type:"label", text:"organized by:" },
-    { type:"logo",  src:"/logos/logo_org_regeneratics.svg", alt:"Organized by Regeneratics", str_cn:"h-5" },
+    { type:"logo",  src:"/logos/logo_org_regeneratics.svg", alt:"Regeneratics", title:"Regeneratics", str_cn:"h-5" },
 
     { type:"sep" },
 
     { type:"label", text:"supported by:" },
-    { type:"logo",  src:"/logos/logo_apo_semg.jpg",     alt:"Supported by SEMG" },
-    { type:"logo",  src:"/logos/logo_apo_reicop.svg",   alt:"Supported by REiCOP" },
-    { type:"logo",  src:"/logos/logo_apo_amacop.svg",   alt:"Supported by AMACOP" },
-    { type:"logo",  src:"/logos/logo_apo_lceuskal.jpg", alt:"Supported by LC Euskal" },
+    { type:"logo",  src:"/logos/logo_apo_semg.jpg",     alt:"SEMG",      title:"Sociedad Española de Médicos Generales y de Familia" },
+    { type:"logo",  src:"/logos/logo_apo_reicop.svg",   alt:"REiCOP",    title:"Red Española de Investigación en COVID Persistente" },
+    { type:"logo",  src:"/logos/logo_apo_amacop.svg",   alt:"AMACOP",    title:"AMACOP" },
+    { type:"logo",  src:"/logos/logo_apo_lceuskal.jpg", alt:"LC Euskal", title:"Long COVID Euskal Herria" },
 
     { type:"sep" },
 ];
+
+
+
+
 
 const lis_bg_viruses                  = [
     {
@@ -75,6 +82,11 @@ const lis_bg_viruses                  = [
         str_anim                      : "virusDriftB 34s ease-in-out infinite",
     },
 ];
+
+
+
+
+
 
 function VirusSilhouette({ className = "" }) {
     return (
@@ -148,6 +160,12 @@ function BgViruses() {
     );
 } //endfun BgViruses
 
+
+
+
+
+
+
 function TickerRow() {
     return (
         <div className="flex w-max shrink-0 items-center gap-8 pr-8">
@@ -174,23 +192,30 @@ function TickerRow() {
                 } //endif
 
                 return (
-                    <div
-                        key={`logo_${idx}`}
-                        className="flex h-8 shrink-0 items-center"
-                    >
-                        <Image
-                            src={itm.src}
-                            alt={itm.alt}
-                            width={120}
-                            height={32}
-                            className={`${itm.str_cn || "h-6"} w-auto shrink-0 object-contain opacity-80`}
-                        />
-                    </div>
+                  <div
+                    key={`logo_${idx}`}
+                    className="flex h-8 items-center"
+                    title={itm.title || itm.alt}
+                  >
+                    <Image
+                        src={itm.src}
+                        alt={itm.alt}
+                        width={120}
+                        height={32}
+                        className={`${itm.str_cn || "h-6"} w-auto object-contain opacity-80`}
+                    />
+                  </div>
                 );
             })}
         </div>
     );
 } //endfun TickerRow
+
+
+
+
+
+
 
 function fun_pick_conference(lsd_webinars = []) {
     const dic_by_slug                 = lsd_webinars.find(
@@ -215,6 +240,10 @@ function fun_pick_conference(lsd_webinars = []) {
 
     return null;
 } //endfun fun_pick_conference
+
+
+
+
 
 function fun_get_countdown_parts(str_starts_at, int_now_ms) {
     if (!str_starts_at) {
@@ -242,6 +271,20 @@ function fun_get_countdown_parts(str_starts_at, int_now_ms) {
         boo_started                   : int_diff_ms <= 0,
     };
 } //endfun fun_get_countdown_parts
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 export default function Home() {
     const [boo_copied, setCopied]     = useState(false);
@@ -304,11 +347,9 @@ export default function Home() {
     }; //endfun fun_copy_home
 
     return (
-        <main className="relative min-h-screen overflow-hidden bg-black">
-            {/* Fondo */}
-            <div className="absolute inset-0 bg-gradient-to-b from-black via-zinc-950 to-black" />
-            <div className="absolute inset-0 opacity-60 [background:radial-gradient(ellipse_at_center,rgba(255,255,255,0.06),transparent_60%)]" />
-            <BgViruses />
+        <main className="relative min-h-screen">
+            {/* Fondo  <BgViruses /> */}
+            <Virusbglayer />
             {/* End Fondo */}
 
             <div className="relative mx-auto flex min-h-screen max-w-5xl flex-col items-center justify-center px-6 py-20 text-center">
@@ -450,16 +491,17 @@ export default function Home() {
                     >
                         <GlassPanel str_tint="purple" className="px-8 py-7">
                             <div className="grid grid-cols-2 place-items-center gap-x-8 gap-y-4">
-                                <Link className={str_cn_btn_wide} href="/conference#panelists">
-                                    Panelists
+
+                                <Link className={str_cn_btn_wide} href="/conference#program">
+                                    Program
                                 </Link>
 
                                 <button className={str_cn_btn_wide} type="button" onClick={fun_copy_home}>
                                     {boo_copied ? "Copied!" : "Link to share"}
                                 </button>
 
-                                <Link className={str_cn_btn_wide} href="/conference#program">
-                                    Program
+                                <Link className={str_cn_btn_wide} href="/conference#panelists">
+                                    Panelists
                                 </Link>
 
                                 <a className={str_cn_btn_wide} href={str_pdf_path} download>
@@ -478,9 +520,9 @@ export default function Home() {
                         }}
                     >
                         <GlassPanel str_tint="purple" className="px-8 py-7">
-                            <div className="grid grid-cols-2 gap-8">
+                            <div className="grid grid-cols-2 gap-6 sm:gap-8">
                                 <div className="flex flex-col items-center gap-3">
-                                    <div className="text-xs italic text-zinc-400">
+                                    <div className="min-h-[2.5rem] text-center text-[11px] italic leading-5 text-zinc-300 sm:min-h-0 sm:text-xs sm:text-zinc-400">
                                         Want to be panelist for 2027?
                                     </div>
 
@@ -490,7 +532,7 @@ export default function Home() {
                                 </div>
 
                                 <div className="flex flex-col items-center gap-3">
-                                    <div className="text-xs italic text-zinc-400">
+                                    <div className="min-h-[2.5rem] text-center text-[11px] italic leading-5 text-zinc-300 sm:min-h-0 sm:text-xs sm:text-zinc-400">
                                         Doubts/Support/Others?
                                     </div>
 

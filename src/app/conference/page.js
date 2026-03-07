@@ -125,7 +125,7 @@ export default function ConferencePage() {
 
     if (str_err) {
         return (
-            <main className="min-h-screen bg-black px-6 py-16 text-zinc-200">
+            <main className="min-h-screen px-6 py-16 text-zinc-200">
                 <div className="mx-auto max-w-3xl">
                     <h1 className="text-2xl font-semibold">Conference</h1>
 
@@ -155,8 +155,7 @@ export default function ConferencePage() {
 
 
     return (
-        <main className="relative min-h-screen overflow-hidden">
-            <div className="absolute inset-0 bg-gradient-to-b from-black via-zinc-950 to-black" />
+        <main className="relative min-h-screen">
 
             <div className="relative mx-auto max-w-5xl px-6 py-16 text-zinc-100">
                 <motion.div

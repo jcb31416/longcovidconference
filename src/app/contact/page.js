@@ -77,8 +77,7 @@ export default function ContactPage() {
     }; //endfun fun_submit
 
     return (
-        <main className="relative min-h-screen overflow-hidden">
-            <div className="absolute inset-0 bg-gradient-to-b from-black via-zinc-950 to-black" />
+        <main className="relative min-h-screen">
 
             <div className="relative mx-auto flex min-h-screen max-w-5xl items-center justify-center px-6 py-16 text-zinc-100">
                 <GlassPanel str_tint="purple" className="w-full max-w-4xl px-8 py-8">
