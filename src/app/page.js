@@ -416,7 +416,8 @@ export default function Home() {
                                     </div>
                                 </div>
 
-                                <div className="min-w-[84px] rounded-2xl border border-white/10 bg-white/[0.04] px-4 py-3">
+                                {/* segundero solo display en desktop */}
+                                <div className="hidden sm:block min-w-[84px] rounded-2xl border border-white/10 bg-white/[0.04] px-4 py-3">
                                     <div className="text-2xl font-bold text-zinc-100">
                                         {String(dic_countdown.int_seconds).padStart(2, "0")}
                                     </div>
@@ -424,6 +425,7 @@ export default function Home() {
                                         Seconds
                                     </div>
                                 </div>
+
                             </div>
                         )}
                     </motion.div>
