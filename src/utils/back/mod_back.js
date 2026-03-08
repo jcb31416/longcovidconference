@@ -328,40 +328,67 @@ export async function funbck_getdetailspeakers(dic_in) { // {lis_speakernames,  
                                                   { projection:               { _id: 0, slug: 1, dc2_speakers: 1 } }
                                               ); //end findOne
 
-  dc2_speakers                                = dic_doc?.dc2_speakers ?? {};
-  //                                             await fun2_setcache("dc2_speakers", dc2_speakers); // write in cache
-  // }//enduf fru cache
-  // fin 20260225_0015 ===========
+  dc2_speakers                                = dic_doc?.dc2_speakers ?? {};  // antes se cargaba de: `await fun2_setcache("dc2_speakers", dc2_speakers);`, pero se quitó xq entonces no se actualizaba cn nuevos datos en la nube
+  debugger; // funbck_getdetailspeakers
 
-
+  // info: dc2_speakers tiene esta estructura,
+  // export const dc2_speakers = {
+  //   manuel_ruiz: {
+  //     name: "Manuel Ruiz",
+  //     tto: "",
+  //     email: "",
+  //     descrip: "Clinical and biomedical analysis laboratory technician and a fourth-year student of Biology at the Complutense University of Madrid. He is currently collaborating with CIMA of the University of Navarra in the search for biomarkers of Myalgic Encephalomyelitis/Chronic Fatigue Syndrome. His work focuses on linking Epstein-Barr virus infection in genetically predisposed patients with the development of different diseases.",
+  //   },
+  //   ana_aguilar: {
+  //   ...
 
   const dc2_out                                 = {};
-  const lis_missing                             = [];
-
+  // const lis_missing                             = [];
+  //
   for (let int_i = 0; int_i < lis_speakernames.length; int_i += 1) {
     const key_speaker                            = lis_speakernames[int_i];
     const dic_speaker                            = dc2_speakers[key_speaker] ?? null;
 
     if (!dic_speaker) {
-      lis_missing.push(key_speaker);
-      continue;
-    } //endif
+      console.log(`⚠️ funbck_getdetailspeakers: missing speaker key: ${key_speaker}`);
+    }//endif
 
-    // opcional: devolver solo lo necesario al frontend
     dc2_out[key_speaker]                         = {
-      tto:                                       dic_speaker.tto ?? null, // :dev 20260224_1033. mirar la misma nota yyyymmdd.. en /components/Panelistas, pues el cambio está en los dos sitios
-      descrip:                                   dic_speaker.descrip ?? null,
-      url:                                       dic_speaker.dic_imgmeta?.url ?? null,
-      uri_vercel:                                dic_speaker.dic_imgmeta?.uri_vercel ?? null
-    };
-  } //endfor panelistas
+      name:                                     dic_speaker.name,
+      tto:                                      dic_speaker.tto ?? null, // :dev 20260224_1033. mirar la misma nota yyyymmdd.. en /components/Panelistas, pues el cambio está en los dos sitios
+      descrip:                                  dic_speaker.descrip ?? null,
+      url:                                      dic_speaker.dic_imgmeta?.url ?? null,
+      uri_vercel:                               dic_speaker.dic_imgmeta?.uri_vercel ?? null
+    }; //enddic dc2_out
+  }//endfor speaker_i
 
-  return {
-    slug:                                        "speakers",
-    lis_speakernames:                            lis_speakernames,
-    dc2_speakers:                                dc2_out,
-    missing:                                     lis_missing
-  };
+  debugger;
+
+  return dc2_out;
+
+
+
+  //
+  //   if (!dic_speaker) {
+  //     lis_missing.push(key_speaker);
+  //     continue;
+  //   } //endif
+  //
+  //   // opcional: devolver solo lo necesario al frontend
+  //   dc2_out[key_speaker]                         = {
+  //     tto:                                       dic_speaker.tto ?? null, // :dev 20260224_1033. mirar la misma nota yyyymmdd.. en /components/Panelistas, pues el cambio está en los dos sitios
+  //     descrip:                                   dic_speaker.descrip ?? null,
+  //     url:                                       dic_speaker.dic_imgmeta?.url ?? null,
+  //     uri_vercel:                                dic_speaker.dic_imgmeta?.uri_vercel ?? null
+  //   };
+  // } //endfor panelistas
+  //
+  // return {
+  //   slug:                                        "speakers",
+  //   lis_speakernames:                            lis_speakernames,
+  //   dc2_speakers:                                dc2_out,
+  //   missing:                                     lis_missing
+  // };
 
 } //endfun funbck_getdetailspeakers
 
