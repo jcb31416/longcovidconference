@@ -32,6 +32,7 @@ const arr_ticker_items                = [
     { type:"logo",  src:"/logos/logo_apo_reicop.svg",   alt:"REiCOP",    title:"Red Española de Investigación en COVID Persistente" },
     { type:"logo",  src:"/logos/logo_apo_amacop.svg",   alt:"AMACOP",    title:"AMACOP" },
     { type:"logo",  src:"/logos/logo_apo_lceuskal.jpg", alt:"LC Euskal", title:"Long COVID Euskal Herria" },
+    { type:"logo",  src:"/logos/logo_movili.png", alt:"Movili", title:"Movilización Persistente" },
 
     { type:"sep" },
 ];
