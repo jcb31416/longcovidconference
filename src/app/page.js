@@ -195,7 +195,7 @@ function TickerRow() {
                 return (
                   <div
                     key={`logo_${idx}`}
-                    className="flex h-8 items-center"
+                    className="flex h-10 items-center"
                     title={itm.title || itm.alt}
                   >
                     <Image
@@ -203,7 +203,7 @@ function TickerRow() {
                         alt={itm.alt}
                         width={120}
                         height={32}
-                        className={`${itm.str_cn || "h-6"} w-auto object-contain opacity-80`}
+                        className={`${itm.str_cn || "h-8"} w-auto object-contain opacity-80`}
                     />
                   </div>
                 );
@@ -457,7 +457,7 @@ export default function Home() {
                     transition={{ duration:0.7, delay:0.45 }}
                     className="mb-10 w-full max-w-4xl overflow-hidden"
                 >
-                    <div className="rounded-full border border-white/10 bg-white/[0.04] px-0 py-3 backdrop-blur-sm">
+                    <div className="rounded-full border border-white/10 bg-white/[0.04] px-0 py-5 backdrop-blur-sm">
                         <div className="relative overflow-hidden">
                             <div className="flex w-max items-center animate-[ticker_80s_linear_infinite]">
                                 <TickerRow />
