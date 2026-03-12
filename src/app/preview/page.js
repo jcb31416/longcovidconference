@@ -71,7 +71,7 @@ export default function PreviewPage() {
                           <strong>Organization</strong>
                           <ul className="list-disc ml-6 mt-1">
                             <li>regeneratics (speaker call and website)</li>
-                            <li>Renegade Research (Zoom webinar hosting and facilitation)</li>
+                            <li>Renegade Research (Zoom webinar hosting)</li>
                           </ul>
                         </div>
 
