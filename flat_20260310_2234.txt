@@ -1,0 +1,3605 @@
+
+# ===== app\api\central\route.js =====
+import { NextResponse }                     from "next/server";
+import {
+  funbck_getwebinar,
+  funbck_getdetailspeakers,
+  funbck_admin_refreshcache,
+  funbck_registerrequest,
+  funbck_sendtocontact,
+}                                           from "@/utils/back/mod_back";
+const fun_fail = (e) => NextResponse.json({ ok:false, err: String(e.message) }, { status: 500 });
+export async function POST(request) {
+  try {
+    const form_1                            = await request.formData();
+    const dic_in                            = Object.fromEntries(form_1.entries());
+    const str_fun                           = dic_in.str_fun || "";
+    let resp;
+    if (     str_fun === "funbck_getwebinar")               resp = await funbck_getwebinar(dic_in);//resp = await funbck_savewebinar(dic_in);
+    else if (str_fun === "funbck_getdetailspeakers")        resp = await funbck_getdetailspeakers(dic_in);
+    else if (str_fun === "funbck_admin_refreshcache")       resp = await funbck_admin_refreshcache(dic_in);
+    else if (str_fun === "funbck_registerrequest")          resp = await funbck_registerrequest(dic_in, request);
+    else if (str_fun === "funbck_sendtocontact")            resp = await funbck_sendtocontact(dic_in, request);
+    else                                    return NextResponse.json({ ok:false, err:"unknown str_fun" }, { status: 400 });
+    return NextResponse.json({ ok:true, resp });
+  } catch (e) {
+    return fun_fail(e);
+  }
+}//end POST
+
+# ===== app\conference\page.js =====
+"use client";
+import { useEffect, useMemo, useState }    from "react";
+import { motion }                          from "framer-motion";
+import Link                                from "next/link";
+import GlassPanel                          from "@/components/GlassPanel.jsx";
+import MDrenderer                          from "@/components/MDrenderer.jsx";
+import Panelistas                          from "@/components/Panelistas.jsx";
+import { fun_fetch }                       from "@/utils/front/mod_front";
+import ConferenceProgram                   from "@/components/ConferenceProgram.jsx";
+import { funfro_parse_program_markdown }   from "@/utils/front/mod_fro.js";
+function fun_pick_conference(lsd_webinars = []) {
+    const dic_by_slug                       = lsd_webinars.find(
+        (dic_webinar) =>
+            typeof dic_webinar?.slug === "string" &&
+            dic_webinar.slug.startsWith("conf_")
+    );
+    if (dic_by_slug) {
+        return dic_by_slug;
+    } //endif
+    const dic_by_about                      = lsd_webinars.find(
+        (dic_webinar) =>
+            typeof dic_webinar?.dic_urls?.about === "string" &&
+            dic_webinar.dic_urls.about.includes("conf_")
+    );
+    if (dic_by_about) {
+        return dic_by_about;
+    } //endif
+    return null;
+} //endfun fun_pick_conference
+export default function ConferencePage() {
+    const [dic_conf, setConf]               = useState(null);
+    const [str_err, setErr]                 = useState("");
+    useEffect(() => {
+        (async () => {
+            try {
+                const dic_out               = await fun_fetch({  str_api: "/api/central",  dic: {slug:"all"},  str_fun: "funbck_getwebinar"  });
+                const lsd_webinars          = dic_out?.resp ?? [];
+                const dic_conf_found        = fun_pick_conference(lsd_webinars);
+                if (!dic_conf_found) {
+                    setErr("No conference found (no item matching conf_).");
+                    return;
+                } //endif no conference
+                setConf(dic_conf_found);
+            } catch (err) {
+                setErr(String(err?.message ?? err));
+            } //endtry
+        })();
+    }, []);
+    useEffect(() => {
+        if (!dic_conf) {
+            return;
+        } //endif
+        const str_hash  =
+            typeof window !== "undefined"
+                ? window.location.hash?.slice(1)
+                : "";
+        if (!str_hash) {
+            return;
+        } //endif
+        const obj_el  = document.getElementById(str_hash);
+        if (!obj_el) {
+            return;
+        } //endif
+        obj_el.scrollIntoView({ behavior:"smooth", block:"start" });
+    }, [dic_conf]);
+    const md_program = useMemo(() => {
+        if (!dic_conf) {
+            return null;
+        } //endif
+        return dic_conf.md_program ?? dic_conf.md_descrip ?? dic_conf.md_sugges ?? null;
+    }, [dic_conf]);
+    const dic_program_parsed = useMemo(() => {
+        if (!md_program) {
+            return null;
+        } //endif
+        return funfro_parse_program_markdown(md_program);
+    }, [md_program]);
+    const lis_speaker_names  = useMemo(() => {
+        if (!dic_conf) {
+            return [];
+        } //endif
+        return Array.isArray(dic_conf.lis_speakernames) ? dic_conf.lis_speakernames : [];
+    }, [dic_conf]);
+    if (str_err) {
+        return (
+            <main className="min-h-screen px-6 py-16 text-zinc-200">
+                <div className="mx-auto max-w-3xl">
+                    <h1 className="text-2xl font-semibold">Conference</h1>
+                    <p className="mt-3 text-zinc-400">
+                        {str_err}
+                    </p>
+                    <p className="mt-3 text-sm text-zinc-500">
+                        Tip: asegúrate de tener al menos un documento conf_ en tu colección
+                        de webinars.
+                    </p>
+                    <Link className="mt-6 inline-block underline text-zinc-300" href="/">
+                        Back home
+                    </Link>
+                </div>
+            </main>
+        );
+    } //endif str_err
+    if (!dic_conf) {
+        return null;
+    } //endif dic_conf
+    return (
+        <main className="relative min-h-screen">
+            <div className="relative mx-auto max-w-5xl px-6 py-16 text-zinc-100">
+                <motion.div
+                    initial={{ opacity:0, y:12 }}
+                    animate={{ opacity:1, y:0 }}
+                    transition={{ duration:0.6 }}
+                    className="mb-8"
+                >
+                    <h1 className="text-3xl font-semibold italic text-center whitespace-pre-line">
+                        {dic_conf.title ?? "Conference"}
+                    </h1>
+                    {dic_conf.subtitle ? (
+                        <p className="mt-1 text-sm text-zinc-400">
+                            {dic_conf.subtitle}
+                        </p>
+                    ) : null}
+                    <div className="mt-4 flex gap-4 text-sm">
+                        <a className="underline text-zinc-300" href="#program">
+                            Program
+                        </a>
+                        <a className="underline text-zinc-300" href="#panelists">
+                            Panelists
+                        </a>
+                    </div>
+                </motion.div>
+                <GlassPanel str_tint="purple" className="px-8 py-8">
+                    <section id="program" className="scroll-mt-24">
+                        {/*
+                          <h2 className="text-xl font-semibold italic text-zinc-200">
+                              Program
+                          </h2>
+                          */}
+                          <div className="mt-4 text-zinc-200">
+                            {dic_program_parsed ? (
+                                <ConferenceProgram dic_program={dic_program_parsed} />
+                            ) : md_program ? (
+                                <MDrenderer md={md_program} />
+                            ) : (
+                                <p className="text-sm text-zinc-400">
+                                    (No program markdown found in dic_conf.)
+                                </p>
+                            )}
+                        </div>
+                    </section>
+                    <GlassPanel className="mx-auto my-8 max-w-md px-8 py-6">
+                      <div className="flex items-center justify-center gap-6">
+                        <Link
+                          href="/"
+                          className="inline-flex min-w-[120px] items-center justify-center rounded-xl border border-white/15 bg-white/5 px-6 py-2 text-sm text-zinc-200 transition hover:bg-white/10"
+                        >
+                          Back
+                        </Link>
+                        <a
+                          href={dic_conf?.dic_urls?.event || dic_conf?.dic_urls?.about || "#"}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex min-w-[120px] items-center justify-center rounded-xl border border-white/15 bg-white/5 px-6 py-2 text-sm text-zinc-200 transition hover:bg-white/10"
+                        >
+                          Access
+                        </a>
+                      </div>
+                    </GlassPanel>
+                    <div className="my-10 border-t border-white/10" />
+                    <section id="panelists" className="scroll-mt-24">
+                        {/*
+                          <h2 className="text-xl font-semibold italic text-zinc-200">
+                              Panelists
+                          </h2>
+                          */}
+                        <div className="mt-6">
+                            {lis_speaker_names.length ? (
+                                <Panelistas lis_speakernames={lis_speaker_names} />
+                            ) : (
+                                <p className="text-sm text-zinc-400">
+                                    (No lis_speakernames found.)
+                                </p>
+                            )}
+                        </div>
+                    </section>
+                </GlassPanel>
+            </div>
+        </main>
+    );
+} //endfun ConferencePage
+
+# ===== app\conference\page0.js =====
+"use client";
+import { useEffect, useMemo, useState }    from "react";
+import { motion }                          from "framer-motion";
+import Link                                from "next/link";
+import GlassPanel                          from "@/components/GlassPanel.jsx";
+import MDrenderer                          from "@/components/MDrenderer.jsx";
+import Panelistas                          from "@/components/Panelistas.jsx";
+import { fun_fetch }                       from "@/utils/front/mod_front";
+function fun_pick_conference(lsd_webinars = []) {
+    const dic_by_slug                       = lsd_webinars.find(
+        (dic_webinar) =>
+            typeof dic_webinar?.slug === "string" &&
+            dic_webinar.slug.startsWith("conf_")
+    );
+    if (dic_by_slug) {
+        return dic_by_slug;
+    } //endif
+    const dic_by_about                      = lsd_webinars.find(
+        (dic_webinar) =>
+            typeof dic_webinar?.dic_urls?.about === "string" &&
+            dic_webinar.dic_urls.about.includes("conf_")
+    );
+    if (dic_by_about) {
+        return dic_by_about;
+    } //endif
+    return null;
+} //endfun fun_pick_conference
+export default function ConferencePage() {
+    const [dic_conf, setConf]               = useState(null);
+    const [str_err, setErr]                 = useState("");
+    useEffect(() => {
+        (async () => {
+            try {
+                const dic_out               = await fun_fetch({  str_api: "/api/central",  dic: {slug:"all"},  str_fun: "funbck_getwebinar"  });
+                const lsd_webinars          = dic_out?.resp ?? [];
+                const dic_conf_found        = fun_pick_conference(lsd_webinars);
+                if (!dic_conf_found) {
+                    setErr("No conference found (no item matching conf_).");
+                    return;
+                } //endif no conference
+                setConf(dic_conf_found);
+            } catch (err) {
+                setErr(String(err?.message ?? err));
+            } //endtry
+        })();
+    }, []);
+    useEffect(() => {
+        if (!dic_conf) {
+            return;
+        } //endif
+        const str_hash  =
+            typeof window !== "undefined"
+                ? window.location.hash?.slice(1)
+                : "";
+        if (!str_hash) {
+            return;
+        } //endif
+        const obj_el  = document.getElementById(str_hash);
+        if (!obj_el) {
+            return;
+        } //endif
+        obj_el.scrollIntoView({ behavior:"smooth", block:"start" });
+    }, [dic_conf]);
+    const md_program  = useMemo(() => {
+        if (!dic_conf) {
+            return null;
+        } //endif
+        return dic_conf.md_program ?? dic_conf.md_descrip ?? dic_conf.md_sugges ?? null;
+    }, [dic_conf]);
+    const lis_speaker_names  = useMemo(() => {
+        if (!dic_conf) {
+            return [];
+        } //endif
+        return Array.isArray(dic_conf.lis_speakernames) ? dic_conf.lis_speakernames : [];
+    }, [dic_conf]);
+    if (str_err) {
+        return (
+            <main className="min-h-screen bg-black px-6 py-16 text-zinc-200">
+                <div className="mx-auto max-w-3xl">
+                    <h1 className="text-2xl font-semibold">Conference</h1>
+                    <p className="mt-3 text-zinc-400">
+                        {str_err}
+                    </p>
+                    <p className="mt-3 text-sm text-zinc-500">
+                        Tip: asegúrate de tener al menos un documento conf_ en tu colección
+                        de webinars.
+                    </p>
+                    <Link className="mt-6 inline-block underline text-zinc-300" href="/">
+                        Back home
+                    </Link>
+                </div>
+            </main>
+        );
+    } //endif str_err
+    if (!dic_conf) {
+        return null;
+    } //endif dic_conf
+    return (
+        <main className="relative min-h-screen overflow-hidden">
+            <div className="absolute inset-0 bg-gradient-to-b from-black via-zinc-950 to-black" />
+            <div className="relative mx-auto max-w-5xl px-6 py-16 text-zinc-100">
+                <motion.div
+                    initial={{ opacity:0, y:12 }}
+                    animate={{ opacity:1, y:0 }}
+                    transition={{ duration:0.6 }}
+                    className="mb-8"
+                >
+                    <h1 className="text-3xl font-semibold italic text-center whitespace-pre-line">
+                        {dic_conf.title ?? "Conference"}
+                    </h1>
+                    {dic_conf.subtitle ? (
+                        <p className="mt-1 text-sm text-zinc-400">
+                            {dic_conf.subtitle}
+                        </p>
+                    ) : null}
+                    <div className="mt-4 flex gap-4 text-sm">
+                        <a className="underline text-zinc-300" href="#program">
+                            Program
+                        </a>
+                        <a className="underline text-zinc-300" href="#panelists">
+                            Panelists
+                        </a>
+                    </div>
+                </motion.div>
+                <GlassPanel className="px-8 py-8">
+                    <section id="program" className="scroll-mt-24">
+                        {/*
+                          <h2 className="text-xl font-semibold italic text-zinc-200">
+                              Program
+                          </h2>
+                          */}
+                        <div className="mt-4 text-zinc-200">
+                            {md_program ? (
+                                <MDrenderer md={md_program} />
+                            ) : (
+                                <p className="text-sm text-zinc-400">
+                                    (No program markdown found in dic_conf.)
+                                </p>
+                            )}
+                        </div>
+                    </section>
+                    <GlassPanel className="mx-auto my-8 max-w-md px-8 py-6">
+                      <div className="flex items-center justify-center gap-6">
+                        <Link
+                          href="/"
+                          className="inline-flex min-w-[120px] items-center justify-center rounded-xl border border-white/15 bg-white/5 px-6 py-2 text-sm text-zinc-200 transition hover:bg-white/10"
+                        >
+                          Back
+                        </Link>
+                        <a
+                          href={dic_conf?.dic_urls?.event || dic_conf?.dic_urls?.about || "#"}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex min-w-[120px] items-center justify-center rounded-xl border border-white/15 bg-white/5 px-6 py-2 text-sm text-zinc-200 transition hover:bg-white/10"
+                        >
+                          Access
+                        </a>
+                      </div>
+                    </GlassPanel>
+                    <div className="my-10 border-t border-white/10" />
+                    <section id="panelists" className="scroll-mt-24">
+                        {/*
+                          <h2 className="text-xl font-semibold italic text-zinc-200">
+                              Panelists
+                          </h2>
+                          */}
+                        <div className="mt-6">
+                            {lis_speaker_names.length ? (
+                                <Panelistas lis_speakernames={lis_speaker_names} />
+                            ) : (
+                                <p className="text-sm text-zinc-400">
+                                    (No lis_speakernames found.)
+                                </p>
+                            )}
+                        </div>
+                    </section>
+                </GlassPanel>
+            </div>
+        </main>
+    );
+} //endfun ConferencePage
+
+# ===== app\conference\page1.js =====
+"use client";
+import { useEffect, useMemo, useState }    from "react";
+import { motion }                          from "framer-motion";
+import Link                                from "next/link";
+import GlassPanel                          from "@/components/GlassPanel.jsx";
+import MDrenderer                          from "@/components/MDrenderer.jsx";
+import Panelistas                          from "@/components/Panelistas.jsx";
+import { fun_fetch }                       from "@/utils/front/mod_front";
+function fun_pick_conference(lsd_webinars = []) {
+    const dic_by_slug                       = lsd_webinars.find(
+        (dic_webinar) =>
+            typeof dic_webinar?.slug === "string" &&
+            dic_webinar.slug.startsWith("conf_")
+    );
+    if (dic_by_slug) {
+        return dic_by_slug;
+    } //endif
+    const dic_by_about                      = lsd_webinars.find(
+        (dic_webinar) =>
+            typeof dic_webinar?.dic_urls?.about === "string" &&
+            dic_webinar.dic_urls.about.includes("conf_")
+    );
+    if (dic_by_about) {
+        return dic_by_about;
+    } //endif
+    return null;
+} //endfun fun_pick_conference
+export default function ConferencePage() {
+    const [dic_conf, setConf]               = useState(null);
+    const [str_err, setErr]                 = useState("");
+    useEffect(() => {
+        (async () => {
+            try {
+                const dic_out               = await fun_fetch({  str_api: "/api/central",  dic: {slug:"all"},  str_fun: "funbck_getwebinar"  });
+                const lsd_webinars          = dic_out?.resp ?? [];
+                const dic_conf_found        = fun_pick_conference(lsd_webinars);
+                if (!dic_conf_found) {
+                    setErr("No conference found (no item matching conf_).");
+                    return;
+                } //endif no conference
+                setConf(dic_conf_found);
+            } catch (err) {
+                setErr(String(err?.message ?? err));
+            } //endtry
+        })();
+    }, []);
+    useEffect(() => {
+        if (!dic_conf) {
+            return;
+        } //endif
+        const str_hash  =
+            typeof window !== "undefined"
+                ? window.location.hash?.slice(1)
+                : "";
+        if (!str_hash) {
+            return;
+        } //endif
+        const obj_el  = document.getElementById(str_hash);
+        if (!obj_el) {
+            return;
+        } //endif
+        obj_el.scrollIntoView({ behavior:"smooth", block:"start" });
+    }, [dic_conf]);
+    const md_program  = useMemo(() => {
+        if (!dic_conf) {
+            return null;
+        } //endif
+        return dic_conf.md_program ?? dic_conf.md_descrip ?? dic_conf.md_sugges ?? null;
+    }, [dic_conf]);
+    const lis_speaker_names  = useMemo(() => {
+        if (!dic_conf) {
+            return [];
+        } //endif
+        return Array.isArray(dic_conf.lis_speakernames) ? dic_conf.lis_speakernames : [];
+    }, [dic_conf]);
+    if (str_err) {
+        return (
+            <main className="min-h-screen bg-black px-6 py-16 text-zinc-200">
+                <div className="mx-auto max-w-3xl">
+                    <h1 className="text-2xl font-semibold">Conference</h1>
+                    <p className="mt-3 text-zinc-400">
+                        {str_err}
+                    </p>
+                    <p className="mt-3 text-sm text-zinc-500">
+                        Tip: asegúrate de tener al menos un documento conf_ en tu colección
+                        de webinars.
+                    </p>
+                    <Link className="mt-6 inline-block underline text-zinc-300" href="/">
+                        Back home
+                    </Link>
+                </div>
+            </main>
+        );
+    } //endif str_err
+    if (!dic_conf) {
+        return null;
+    } //endif dic_conf
+    return (
+        <main className="relative min-h-screen overflow-hidden">
+            <div className="absolute inset-0 bg-gradient-to-b from-black via-zinc-950 to-black" />
+            <div className="relative mx-auto max-w-5xl px-6 py-16 text-zinc-100">
+                <motion.div
+                    initial={{ opacity:0, y:12 }}
+                    animate={{ opacity:1, y:0 }}
+                    transition={{ duration:0.6 }}
+                    className="mb-8"
+                >
+                    <h1 className="text-3xl font-semibold italic text-center whitespace-pre-line">
+                        {dic_conf.title ?? "Conference"}
+                    </h1>
+                    {dic_conf.subtitle ? (
+                        <p className="mt-1 text-sm text-zinc-400">
+                            {dic_conf.subtitle}
+                        </p>
+                    ) : null}
+                    <div className="mt-4 flex gap-4 text-sm">
+                        <a className="underline text-zinc-300" href="#program">
+                            Program
+                        </a>
+                        <a className="underline text-zinc-300" href="#panelists">
+                            Panelists
+                        </a>
+                    </div>
+                </motion.div>
+                <GlassPanel className="px-8 py-8">
+                    <section id="program" className="scroll-mt-24">
+                        {/*
+                          <h2 className="text-xl font-semibold italic text-zinc-200">
+                              Program
+                          </h2>
+                          */}
+                        <div className="mt-4 text-zinc-200">
+                            {md_program ? (
+                                <MDrenderer md={md_program} />
+                            ) : (
+                                <p className="text-sm text-zinc-400">
+                                    (No program markdown found in dic_conf.)
+                                </p>
+                            )}
+                        </div>
+                    </section>
+                    <GlassPanel className="mx-auto my-8 max-w-md px-8 py-6">
+                      <div className="flex items-center justify-center gap-6">
+                        <Link
+                          href="/"
+                          className="inline-flex min-w-[120px] items-center justify-center rounded-xl border border-white/15 bg-white/5 px-6 py-2 text-sm text-zinc-200 transition hover:bg-white/10"
+                        >
+                          Back
+                        </Link>
+                        <a
+                          href={dic_conf?.dic_urls?.event || dic_conf?.dic_urls?.about || "#"}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex min-w-[120px] items-center justify-center rounded-xl border border-white/15 bg-white/5 px-6 py-2 text-sm text-zinc-200 transition hover:bg-white/10"
+                        >
+                          Access
+                        </a>
+                      </div>
+                    </GlassPanel>
+                    <div className="my-10 border-t border-white/10" />
+                    <section id="panelists" className="scroll-mt-24">
+                        {/*
+                          <h2 className="text-xl font-semibold italic text-zinc-200">
+                              Panelists
+                          </h2>
+                          */}
+                        <div className="mt-6">
+                            {lis_speaker_names.length ? (
+                                <Panelistas lis_speakernames={lis_speaker_names} />
+                            ) : (
+                                <p className="text-sm text-zinc-400">
+                                    (No lis_speakernames found.)
+                                </p>
+                            )}
+                        </div>
+                    </section>
+                </GlassPanel>
+            </div>
+        </main>
+    );
+} //endfun ConferencePage
+
+# ===== app\contact\page.js =====
+"use client";
+import { useMemo, useState }            from "react";
+import GlassPanel                       from "@/components/GlassPanel.jsx";
+import { fun_fetch }                    from "@/utils/front/mod_front.js";
+import Link                             from "next/link";
+const str_cn_select                     =
+    "w-full rounded-xl border border-white/10 bg-black/30 px-4 py-3 text-sm " +
+    "text-zinc-100 outline-none focus:ring-2 focus:ring-white/20";
+const str_cn_textarea                   =
+    "w-full min-h-[140px] resize-none rounded-xl border border-white/10 bg-black/30 px-4 py-3 text-sm " +
+    "text-zinc-100 placeholder:text-zinc-500 outline-none focus:ring-2 focus:ring-white/20";
+const str_cn_label                      = "text-sm font-semibold";
+const str_cn_rlabel                     = "text-xs italic text-zinc-500";
+export default function ContactPage() {
+    const int_max                       = 300;
+    const [dic_form, setForm]           = useState({
+        field                           : "speaker",
+        tag                             : "science",
+        observations                    : "",
+    });
+    const [boo_sending, setSending]     = useState(false);
+    const [str_msg, setMsg]             = useState("");
+    const int_left                      = int_max - dic_form.observations.length;
+    const boo_can_submit                =
+        dic_form.observations.trim() &&
+        !boo_sending;
+    const fun_set                       = (str_key) => (eve_input) =>
+        setForm((dic_prev) => ({
+            ...dic_prev,
+            [str_key]                   : eve_input.target.value,
+        }));
+    const fun_submit                    = async (eve_submit) => {
+        eve_submit.preventDefault();
+        setMsg("");
+        if (!boo_can_submit) {
+            setMsg("Please write a message.");
+            return;
+        } //endif invalid submit
+        try {
+            setSending(true);
+            const dic_out               = await fun_fetch({
+                str_api                 : "/api/central",
+                str_fun                 : "funbck_sendtocontact",
+                dic                     : dic_form,
+            });
+            if (!dic_out.ok) {
+                throw new Error(dic_out.err || "Contact send failed.");
+            } //endif not ok
+            setMsg("✅ Sent. We usually reply within 24–48h.");
+            setForm({
+                field                   : "business",
+                tag                     : "sponsor",
+                observations            : "",
+            });
+        } catch (err) {
+            setMsg(String(err?.message ?? err));
+        } finally {
+            setSending(false);
+        } //endtry fun_submit
+    }; //endfun fun_submit
+    return (
+        <main className="relative min-h-screen">
+            <div className="relative mx-auto flex min-h-screen max-w-5xl items-center justify-center px-6 py-16 text-zinc-100">
+                <GlassPanel str_tint="purple" className="w-full max-w-4xl px-8 py-8">
+                    <h1 className="text-3xl font-semibold">
+                        Contact
+                    </h1>
+                    <p className="mt-1 text-sm text-zinc-400">
+                        Send us a short message and we&apos;ll get back to you.
+                    </p>
+                    <form onSubmit={fun_submit}>
+                        <div className="mt-8 grid grid-cols-1 gap-4 md:grid-cols-2">
+                            {/* Field */}
+                            <div>
+                                <div className="flex items-baseline justify-between">
+                                    <div className={str_cn_label}>
+                                        field
+                                    </div>
+                                    <div className={str_cn_rlabel}>
+                                        what is this about?
+                                    </div>
+                                </div>
+                                <select
+                                    className={str_cn_select}
+                                    value={dic_form.field}
+                                    onChange={fun_set("field")}
+                                >
+                                    <option value="science">science</option>
+                                    <option value="business">business</option>
+                                    <option value="support">support</option>
+                                    <option value="other">other</option>
+                                </select>
+                            </div>
+                            {/* End Field */}
+                            {/* Priority tag */}
+                            <div>
+                                <div className="flex items-baseline justify-between">
+                                    <div className={str_cn_label}>
+                                        priority tag
+                                    </div>
+                                    <div className={str_cn_rlabel}>
+                                        which tag describes you best?
+                                    </div>
+                                </div>
+                                <select
+                                    className={str_cn_select}
+                                    value={dic_form.tag}
+                                    onChange={fun_set("tag")}
+                                >
+                                    <option value="speaker">speaker</option>
+                                    <option value="press">press</option>
+                                    <option value="general">general</option>
+                                </select>
+                            </div>
+                            {/* End Priority tag */}
+                            {/* Observations */}
+                            <div className="md:col-span-2">
+                                <div className="flex items-baseline justify-between">
+                                    <div className={str_cn_label}>
+                                        observations
+                                    </div>
+                                    <div className={str_cn_rlabel}>
+                                        max {int_max} chars
+                                    </div>
+                                </div>
+                                <textarea
+                                    className={str_cn_textarea}
+                                    value={dic_form.observations}
+                                    placeholder="Write your message..."
+                                    onChange={(eve_change) =>
+                                        setForm((dic_prev) => ({
+                                            ...dic_prev,
+                                            observations    : eve_change.target.value.slice(0, int_max),
+                                        }))
+                                    }
+                                />
+                                <div className="mt-2 flex items-center justify-between text-xs text-zinc-500">
+                                    <div>
+                                        {int_left} left
+                                    </div>
+                                    <div>
+                                        {dic_form.observations.length}/{int_max}
+                                    </div>
+                                </div>
+                            </div>
+                            {/* End Observations */}
+                        </div>
+                        {/* Actions */}
+                        <div className="mt-6 flex items-center justify-between gap-4">
+                            <div className="flex items-center gap-4">
+                                <button
+                                    type="submit"
+                                    disabled={!boo_can_submit}
+                                    className={[
+                                        "rounded-xl px-6 py-2 text-sm font-semibold transition",
+                                        boo_can_submit
+                                            ? "border border-white/15 bg-white/10 hover:bg-white/15"
+                                            : "cursor-not-allowed border border-white/10 bg-white/5 text-zinc-500",
+                                    ].join(" ")}
+                                >
+                                    {boo_sending ? "Sending..." : "Send"}
+                                </button>
+                                <div className="text-sm text-zinc-400">
+                                    {str_msg || "We usually reply within 24–48h."}
+                                </div>
+                            </div>
+                            <Link
+                                href="/"
+                                className="inline-flex items-center rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-sm text-zinc-300 transition hover:bg-white/10"
+                            >
+                                Back
+                            </Link>
+                        </div>
+                        {/* End Actions */}
+                    </form>
+                </GlassPanel>
+            </div>
+        </main>
+    );
+} //endfun ContactPage
+
+# ===== app\edu\[webinar_i]\page.js =====
+'use client';
+import Panel                            from '@/components/Panel.jsx';
+import Panelistas                       from '@/components/Panelistas.jsx';
+import { useEffect, useState }          from "react";
+import { fun_fetch }                    from "@/utils/front/mod_front"; // adjust path if different
+import { useParams }                    from "next/navigation";
+export default function Webinar() {
+  const params                          = useParams();
+  const [dic_panel, set_panel]          = useState(null);
+  useEffect(() => {
+    const fun_getwebinar = async () => {
+      const form_1 = new FormData();
+      form_1.set("slug", params.webinar_i);
+      const resp = await fun_fetch({ str_api: "/api/central",  form: form_1,  str_fun:"funbck_getwebinar" });
+      set_panel(resp.resp);
+    }; //endfun fun_savewebinar
+    fun_getwebinar().catch((e) => console.error("DB update failed:", e));
+  }, [params.webinar_i]);
+  if (!dic_panel) return null;
+  return (
+    <>
+      <Panel
+        dic_webinar= { dic_panel }
+        str_viewmode={"full"}
+      />
+    </>
+  ); // end return
+}//end page Webinar
+
+# ===== app\edu\page.js =====
+'use client';
+import { useEffect, useState }        from "react";
+import Panel                          from '@/components/Panel.jsx';
+import { fun_fetch }                  from "@/utils/front/mod_front";
+export default function Webinars() {
+  const [lsd_webinars, set_webinars] = useState([]);
+  useEffect(() => {
+    async function fun_getwebinars() {
+      const form_1 = new FormData();
+      form_1.set("slug", "all");
+      const resp = await fun_fetch({ str_api: "/api/central", form: form_1, str_fun: "funbck_getwebinar" });
+      set_webinars(resp.resp ?? []);
+    }//end fun_getwebinars
+    fun_getwebinars().catch(console.error);
+  }, []);
+  return (
+    <main className="mx-auto w-full max-w-5xl px-6 py-10">
+      <h1 className="text-2xl font-semibold text-zinc-900 dark:text-zinc-50">Academy</h1>
+      <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">Dashboard de eventos académicos</p>
+      <div className="mt-8 flex flex-col gap-6">
+        {lsd_webinars.map((w) => (
+          <Panel key={w.slug ?? w._id} dic_webinar={w} str_viewmode="vprevia" />
+        ))}
+      </div>
+    </main>
+  );
+}
+
+# ===== app\layout.js =====
+import { Inter } from "next/font/google";
+import "./globals.css";
+const inter = Inter({ subsets: ["latin"] });
+export const metadata = {
+  title: "Long COVID Conference",
+  description: "Long COVID Conference",
+};
+export default function RootLayout({ children }) {
+  return (
+    <html lang="en" className={`${inter.className} overflow-x-hidden`}>
+      <body className="relative m-0 min-h-screen overflow-x-hidden bg-[#05070b] text-white antialiased">
+        <div className="pointer-events-none fixed inset-0 -z-10 bg-gradient-to-b from-[#0a0d14] via-zinc-950 to-[#07090d]" />
+        <div className="pointer-events-none fixed inset-0 -z-10 opacity-75 [background:radial-gradient(ellipse_at_center,rgba(255,255,255,0.085),transparent_60%)]" />
+        {children}
+      </body>
+    </html>
+  );
+}
+
+# ===== app\page.js =====
+"use client";
+import Image                          from "next/image";
+import Link                           from "next/link";
+import { motion }                     from "framer-motion";
+import { useEffect, useMemo, useRef, useState } from "react";
+import GlassPanel                     from "@/components/GlassPanel.jsx";
+import Virusbglayer                   from "@/components/Virusbglayer.jsx";
+import { fun_fetch }                  from "@/utils/front/mod_front.js";
+const str_pdf_path                    = "/cartel congreso_LCDD2026.pdf";
+const str_cn_btn                      =
+    "inline-flex items-center justify-center rounded-xl border border-white/15 bg-white/5 " +
+    "px-6 py-2 text-sm text-zinc-200 transition " +
+    "hover:bg-white/10 active:scale-[0.99] " +
+    "focus:outline-none focus-visible:ring-2 focus-visible:ring-white/30";
+const str_cn_btn_wide                 = str_cn_btn + " w-full max-w-[160px]";
+const arr_ticker_items                = [
+    { type:"label", text:"organized by:" },
+    { type:"logo",  src:"/logos/logo_org_regeneratics.svg", alt:"Regeneratics", title:"Regeneratics", str_cn:"h-5" },
+    { type:"sep" },
+    { type:"label", text:"supported by:" },
+    { type:"logo",  src:"/logos/logo_apo_semg.jpg",     alt:"SEMG",      title:"Sociedad Española de Médicos Generales y de Familia" },
+    { type:"logo",  src:"/logos/logo_apo_reicop.svg",   alt:"REiCOP",    title:"Red Española de Investigación en COVID Persistente" },
+    { type:"logo",  src:"/logos/logo_apo_amacop.svg",   alt:"AMACOP",    title:"AMACOP" },
+    { type:"logo",  src:"/logos/logo_apo_lceuskal.jpg", alt:"LC Euskal", title:"Long COVID Euskal Herria" },
+    { type:"logo",  src:"/logos/logo_movili.png", alt:"Movili", title:"Movilización Persistente" },
+    { type:"sep" },
+];
+const lis_bg_viruses                  = [
+    {
+        left                          : "5%",
+        top                           : "8%",
+        size                          : 220,
+        opacity                       : 0.045,
+        blur_px                       : 4,
+        str_anim                      : "virusDriftA 42s ease-in-out infinite",
+    },
+    {
+        right                         : "7%",
+        top                           : "10%",
+        size                          : 280,
+        opacity                       : 0.04,
+        blur_px                       : 7,
+        str_anim                      : "virusDriftB 56s ease-in-out infinite",
+    },
+    {
+        left                          : "8%",
+        bottom                        : "10%",
+        size                          : 250,
+        opacity                       : 0.03,
+        blur_px                       : 6,
+        str_anim                      : "virusDriftC 49s ease-in-out infinite",
+    },
+    {
+        right                         : "12%",
+        bottom                        : "12%",
+        size                          : 180,
+        opacity                       : 0.04,
+        blur_px                       : 3,
+        str_anim                      : "virusDriftA 38s ease-in-out infinite",
+    },
+    {
+        left                          : "44%",
+        top                           : "14%",
+        size                          : 140,
+        opacity                       : 0.025,
+        blur_px                       : 5,
+        str_anim                      : "virusDriftB 34s ease-in-out infinite",
+    },
+];
+function VirusSilhouette({ className = "" }) {
+    return (
+        <svg
+            viewBox="0 0 200 200"
+            aria-hidden="true"
+            className={className}
+            fill="currentColor"
+        >
+            <circle cx="100" cy="100" r="42" />
+            <circle cx="100" cy="18"  r="8" />
+            <circle cx="100" cy="182" r="8" />
+            <circle cx="18"  cy="100" r="8" />
+            <circle cx="182" cy="100" r="8" />
+            <circle cx="42"  cy="42"  r="8" />
+            <circle cx="158" cy="42"  r="8" />
+            <circle cx="42"  cy="158" r="8" />
+            <circle cx="158" cy="158" r="8" />
+            <circle cx="64"  cy="24"  r="7" />
+            <circle cx="136" cy="24"  r="7" />
+            <circle cx="64"  cy="176" r="7" />
+            <circle cx="136" cy="176" r="7" />
+            <circle cx="24"  cy="64"  r="7" />
+            <circle cx="24"  cy="136" r="7" />
+            <circle cx="176" cy="64"  r="7" />
+            <circle cx="176" cy="136" r="7" />
+            <rect x="96"  y="30"  width="8" height="22" rx="4" />
+            <rect x="96"  y="148" width="8" height="22" rx="4" />
+            <rect x="30"  y="96"  width="22" height="8" rx="4" />
+            <rect x="148" y="96"  width="22" height="8" rx="4" />
+            <rect x="49"  y="49"  width="8" height="18" rx="4" transform="rotate(-45 53 58)" />
+            <rect x="143" y="49"  width="8" height="18" rx="4" transform="rotate(45 147 58)" />
+            <rect x="49"  y="133" width="8" height="18" rx="4" transform="rotate(45 53 142)" />
+            <rect x="143" y="133" width="8" height="18" rx="4" transform="rotate(-45 147 142)" />
+        </svg>
+    );
+} //endfun VirusSilhouette
+function BgViruses() {
+    return (
+        <div className="pointer-events-none absolute inset-0 overflow-hidden">
+            {lis_bg_viruses.map((dic_v, idx) => (
+                <div
+                    key={`virus_${idx}`}
+                    className="absolute will-change-transform"
+                    style={{
+                        left                    : dic_v.left,
+                        right                   : dic_v.right,
+                        top                     : dic_v.top,
+                        bottom                  : dic_v.bottom,
+                        width                   : dic_v.size,
+                        height                  : dic_v.size,
+                        opacity                 : dic_v.opacity,
+                        animation               : dic_v.str_anim,
+                        transformOrigin         : "center center",
+                    }}
+                >
+                    <VirusSilhouette
+                        className="h-full w-full text-fuchsia-500"
+                        style={{ filter:`blur(${dic_v.blur_px}px)` }}
+                    />
+                </div>
+            ))}
+        </div>
+    );
+} //endfun BgViruses
+function TickerRow() {
+    return (
+        <div className="flex w-max shrink-0 items-center gap-8 pr-8">
+            {arr_ticker_items.map((itm, idx) => {
+                if (itm.type === "label") {
+                    return (
+                        <span
+                            key={`label_${idx}`}
+                            className="whitespace-nowrap text-[11px] uppercase tracking-[0.22em] text-zinc-300/75"
+                        >
+                            {itm.text}
+                        </span>
+                    );
+                } //endif
+                if (itm.type === "sep") {
+                    return (
+                        <span
+                            key={`sep_${idx}`}
+                            className="h-4 w-px shrink-0 bg-white/10"
+                            aria-hidden="true"
+                        />
+                    );
+                } //endif
+                return (
+                  <div
+                    key={`logo_${idx}`}
+                    className="flex h-10 items-center"
+                    title={itm.title || itm.alt}
+                  >
+                    <Image
+                        src={itm.src}
+                        alt={itm.alt}
+                        width={120}
+                        height={32}
+                        className={`${itm.str_cn || "h-8"} w-auto object-contain opacity-80`}
+                    />
+                  </div>
+                );
+            })}
+        </div>
+    );
+} //endfun TickerRow
+function fun_pick_conference(lsd_webinars = []) {
+    const dic_by_slug                 = lsd_webinars.find(
+        (dic_webinar) =>
+            typeof dic_webinar?.slug === "string" &&
+            dic_webinar.slug.startsWith("conf_")
+    );
+    if (dic_by_slug) {
+        return dic_by_slug;
+    } //endif
+    const dic_by_about                = lsd_webinars.find(
+        (dic_webinar) =>
+            typeof dic_webinar?.dic_urls?.about === "string" &&
+            dic_webinar.dic_urls.about.includes("conf_")
+    );
+    if (dic_by_about) {
+        return dic_by_about;
+    } //endif
+    return null;
+} //endfun fun_pick_conference
+function fun_get_countdown_parts(str_starts_at, int_now_ms) {
+    if (!str_starts_at) {
+        return null;
+    } //endif
+    const int_target_ms               = new Date(str_starts_at).getTime();
+    if (!Number.isFinite(int_target_ms)) {
+        return null;
+    } //endif
+    const int_diff_ms                 = Math.max(0, int_target_ms - int_now_ms);
+    const int_days                    = Math.floor(int_diff_ms / (1000 * 60 * 60 * 24));
+    const int_hours                   = Math.floor((int_diff_ms / (1000 * 60 * 60)) % 24);
+    const int_minutes                 = Math.floor((int_diff_ms / (1000 * 60)) % 60);
+    const int_seconds                 = Math.floor((int_diff_ms / 1000) % 60);
+    return {
+        int_days,
+        int_hours,
+        int_minutes,
+        int_seconds,
+        boo_started                   : int_diff_ms <= 0,
+    };
+} //endfun fun_get_countdown_parts
+export default function Home() {
+    const [boo_copied, setCopied]     = useState(false);
+    const [dic_conf, setConf]         = useState(null);
+    const [int_now_ms, setNowMs]      = useState(Date.now());
+    const dic_tim_ref                 = useRef(null);
+    useEffect(() => {
+        (async () => {
+            try {
+                const dic_out         = await fun_fetch({
+                    str_api           : "/api/central",
+                    str_fun           : "funbck_getwebinar",
+                    dic               : { slug:"all" },
+                });
+                const lsd_webinars    = dic_out?.resp ?? [];
+                const dic_conf_found  = fun_pick_conference(lsd_webinars);
+                if (dic_conf_found) {
+                    setConf(dic_conf_found);
+                } //endif found
+            } catch (err) {
+                console.error("Home countdown load error:", err);
+            } //endtry
+        })();
+    }, []);
+    useEffect(() => {
+        const int_interval            = setInterval(() => {
+            setNowMs(Date.now());
+        }, 1000);
+        return () => clearInterval(int_interval);
+    }, []);
+    const dic_countdown               = useMemo(() => {
+        return fun_get_countdown_parts(dic_conf?.startsAt, int_now_ms);
+    }, [dic_conf?.startsAt, int_now_ms]);
+    const fun_copy_home               = async () => {
+        try {
+            const str_url             =
+                process.env.NEXT_PUBLIC_SITE_URL ||
+                (typeof window !== "undefined" ? window.location.origin : "");
+            await navigator.clipboard.writeText(str_url);
+            setCopied(true);
+            if (dic_tim_ref.current) {
+                clearTimeout(dic_tim_ref.current);
+            } //endif
+            dic_tim_ref.current       = setTimeout(() => setCopied(false), 2000);
+        } catch (err) {
+            alert("Copy failed. Try manually copying the URL from the address bar.");
+        } //endtry
+    }; //endfun fun_copy_home
+    return (
+        <main className="relative min-h-screen">
+            {/* Fondo  <BgViruses /> */}
+            <Virusbglayer />
+            {/* End Fondo */}
+            <div className="relative mx-auto flex min-h-screen max-w-5xl flex-col items-center justify-center px-6 py-20 text-center">
+                {/* Hero */}
+                <motion.div
+                    className="mb-10 flex flex-col items-center"
+                    initial={{ opacity:0, y:8, scale:1.01 }}
+                    animate={{ opacity:1, y:0, scale:1 }}
+                    transition={{ duration:1.1, ease:"easeOut" }}
+                >
+                    {/* Hero image */}
+                    <div className="select-none">
+                        <Image
+                            src="/hero.png"
+                            alt="LCDD 2026 hero"
+                            width={420}
+                            height={420}
+                            priority
+                            className="h-auto w-[220px] sm:w-[300px] md:w-[380px] lg:w-[420px]"
+                        />
+                    </div>
+                    {/* End Hero image */}
+                </motion.div>
+                {/* End Hero */}
+                {/* Countdown */}
+                {dic_countdown ? (
+                    <motion.div
+                        initial={{ opacity:0, y:8 }}
+                        animate={{ opacity:1, y:0 }}
+                        transition={{ duration:0.7, delay:0.18 }}
+                        className="mb-8"
+                    >
+                        {dic_countdown.boo_started ? (
+                            <div className="rounded-2xl border border-white/10 bg-white/[0.04] px-6 py-3 text-sm font-semibold uppercase tracking-[0.18em] text-zinc-300">
+                                Conference started
+                            </div>
+                        ) : (
+                            <div className="flex flex-wrap items-center justify-center gap-3">
+                                <div className="min-w-[84px] rounded-2xl border border-white/10 bg-white/[0.04] px-4 py-3">
+                                    <div className="text-2xl font-bold text-zinc-100">
+                                        {String(dic_countdown.int_days).padStart(2, "0")}
+                                    </div>
+                                    <div className="text-[10px] uppercase tracking-[0.24em] text-zinc-500">
+                                        Days
+                                    </div>
+                                </div>
+                                <div className="min-w-[84px] rounded-2xl border border-white/10 bg-white/[0.04] px-4 py-3">
+                                    <div className="text-2xl font-bold text-zinc-100">
+                                        {String(dic_countdown.int_hours).padStart(2, "0")}
+                                    </div>
+                                    <div className="text-[10px] uppercase tracking-[0.24em] text-zinc-500">
+                                        Hours
+                                    </div>
+                                </div>
+                                <div className="min-w-[84px] rounded-2xl border border-white/10 bg-white/[0.04] px-4 py-3">
+                                    <div className="text-2xl font-bold text-zinc-100">
+                                        {String(dic_countdown.int_minutes).padStart(2, "0")}
+                                    </div>
+                                    <div className="text-[10px] uppercase tracking-[0.24em] text-zinc-500">
+                                        Minutes
+                                    </div>
+                                </div>
+                                {/* segundero solo display en desktop */}
+                                <div className="hidden sm:block min-w-[84px] rounded-2xl border border-white/10 bg-white/[0.04] px-4 py-3">
+                                    <div className="text-2xl font-bold text-zinc-100">
+                                        {String(dic_countdown.int_seconds).padStart(2, "0")}
+                                    </div>
+                                    <div className="text-[10px] uppercase tracking-[0.24em] text-zinc-500">
+                                        Seconds
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+                    </motion.div>
+                ) : null}
+                {/* End Countdown */}
+                {/* Rotulo 2 lineas */}
+                <motion.div
+                    initial={{ opacity:0, y:10 }}
+                    animate={{ opacity:1, y:0 }}
+                    transition={{ duration:0.7, delay:0.3 }}
+                    className="mb-10"
+                >
+                    <div className="text-2xl font-semibold italic text-zinc-400">
+                        International Online Conference
+                    </div>
+                    <div className="text-2xl font-semibold italic text-zinc-500">
+                        Long COVID and Debilitating Diseases 2026
+                    </div>
+                </motion.div>
+                {/* End Rotulo 2 lineas */}
+                {/* ticker institucional */}
+                <motion.div
+                    initial={{ opacity:0, y:8 }}
+                    animate={{ opacity:1, y:0 }}
+                    transition={{ duration:0.7, delay:0.45 }}
+                    className="mb-10 w-full max-w-4xl overflow-hidden"
+                >
+                    <div className="rounded-full border border-white/10 bg-white/[0.04] px-0 py-5 backdrop-blur-sm">
+                        <div className="relative overflow-hidden">
+                            <div className="flex w-max items-center animate-[ticker_80s_linear_infinite]">
+                                <TickerRow />
+                                <TickerRow />
+                                <TickerRow />
+                                <TickerRow />
+                            </div>
+                        </div>
+                    </div>
+                </motion.div>
+                {/* End ticker institucional */}
+                {/* Panels */}
+                <motion.div
+                    className="w-full max-w-3xl space-y-6"
+                    initial="hidden"
+                    animate="show"
+                    variants={{
+                        hidden          : {},
+                        show            : {
+                            transition  : {
+                                staggerChildren : 0.14,
+                                delayChildren   : 0.55,
+                            },
+                        },
+                    }}
+                >
+                    {/* Panel 1 */}
+                    <motion.div
+                        variants={{
+                            hidden      : { opacity:0, y:18 },
+                            show        : { opacity:1, y:0 },
+                        }}
+                    >
+                        <GlassPanel str_tint="purple" className="px-8 py-7">
+                            <div className="grid grid-cols-2 place-items-center gap-x-8 gap-y-4">
+                                <Link className={str_cn_btn_wide} href="/conference#program">
+                                    Program
+                                </Link>
+                                <button className={str_cn_btn_wide} type="button" onClick={fun_copy_home}>
+                                    {boo_copied ? "Copied!" : "Link to share"}
+                                </button>
+                                <Link className={str_cn_btn_wide} href="/conference#panelists">
+                                    Panelists
+                                </Link>
+                                <a className={str_cn_btn_wide} href={str_pdf_path} download>
+                                    PDF
+                                </a>
+                            </div>
+                        </GlassPanel>
+                    </motion.div>
+                    {/* End Panel 1 */}
+                    {/* Panel 2 */}
+                    <motion.div
+                        variants={{
+                            hidden      : { opacity:0, y:18 },
+                            show        : { opacity:1, y:0 },
+                        }}
+                    >
+                        <GlassPanel str_tint="purple" className="px-8 py-7">
+                            <div className="grid grid-cols-2 gap-6 sm:gap-8">
+                                <div className="flex flex-col items-center gap-3">
+                                    <div className="min-h-[2.5rem] text-center text-[11px] italic leading-5 text-zinc-300 sm:min-h-0 sm:text-xs sm:text-zinc-400">
+                                        Want to be panelist for 2027?
+                                    </div>
+                                    <Link className={str_cn_btn_wide} href="/register">
+                                        Register
+                                    </Link>
+                                </div>
+                                <div className="flex flex-col items-center gap-3">
+                                    <div className="min-h-[2.5rem] text-center text-[11px] italic leading-5 text-zinc-300 sm:min-h-0 sm:text-xs sm:text-zinc-400">
+                                        Doubts/Support/Others?
+                                    </div>
+                                    <Link className={str_cn_btn_wide} href="/contact">
+                                        Contact
+                                    </Link>
+                                </div>
+                            </div>
+                        </GlassPanel>
+                    </motion.div>
+                    {/* End Panel 2 */}
+                </motion.div>
+                {/* End Panels */}
+            </div>
+            <style jsx>{`
+                @keyframes ticker {
+                    from {
+                        transform: translateX(0);
+                    }
+                    to {
+                        transform: translateX(-25%);
+                    }
+                }
+                @keyframes virusDriftA {
+                    0%   { transform: translate3d(0px, 0px, 0) rotate(0deg) scale(1); }
+                    25%  { transform: translate3d(14px, -10px, 0) rotate(4deg) scale(1.03); }
+                    50%  { transform: translate3d(-8px, 12px, 0) rotate(-5deg) scale(0.98); }
+                    75%  { transform: translate3d(10px, 6px, 0) rotate(2deg) scale(1.02); }
+                    100% { transform: translate3d(0px, 0px, 0) rotate(0deg) scale(1); }
+                }
+                @keyframes virusDriftB {
+                    0%   { transform: translate3d(0px, 0px, 0) rotate(0deg) scale(1); }
+                    25%  { transform: translate3d(-12px, 8px, 0) rotate(-4deg) scale(1.02); }
+                    50%  { transform: translate3d(16px, -10px, 0) rotate(5deg) scale(0.97); }
+                    75%  { transform: translate3d(-6px, -4px, 0) rotate(-2deg) scale(1.01); }
+                    100% { transform: translate3d(0px, 0px, 0) rotate(0deg) scale(1); }
+                }
+                @keyframes virusDriftC {
+                    0%   { transform: translate3d(0px, 0px, 0) rotate(0deg) scale(1); }
+                    25%  { transform: translate3d(8px, 12px, 0) rotate(3deg) scale(1.01); }
+                    50%  { transform: translate3d(-14px, -8px, 0) rotate(-4deg) scale(0.98); }
+                    75%  { transform: translate3d(12px, -6px, 0) rotate(2deg) scale(1.03); }
+                    100% { transform: translate3d(0px, 0px, 0) rotate(0deg) scale(1); }
+                }
+            `}</style>
+        </main>
+    );
+} //endfun Home
+
+# ===== app\register\page.js =====
+"use client";
+import { useMemo, useState }            from "react";
+import Link                             from "next/link";
+import GlassPanel                       from "@/components/GlassPanel.jsx";
+import MDrenderer                       from "@/components/MDrenderer.jsx";
+import md_terms                         from "@/content/md_terms.js";
+import {fun_fetch}                      from "@/utils/front/mod_front.js";
+const str_cn_input                      =
+    "w-full rounded-xl border border-white/10 bg-black/30 px-4 py-3 text-sm " +
+    "text-zinc-100 placeholder:text-zinc-500 outline-none " +
+    "focus:ring-2 focus:ring-white/20";
+const str_cn_label                      = "text-xs font-semibold uppercase tracking-widest text-zinc-400";
+const str_cn_rlabel                     = "text-xs italic text-zinc-500";
+export default function RegisterPage() {
+    const [dic_form, setForm]           = useState({
+        name                            : "",
+        surname                         : "",
+        email                           : "",
+        affiliation                     : "",
+        profession                      : "",
+        talkTitle                       : "",
+        merits                          : "",
+        observations                    : "",
+    });
+    const [boo_terms, setTerms]         = useState(false);
+    const [boo_modal, setModal]         = useState(false);
+    const [boo_sending, setSending]     = useState(false);
+    const [str_msg, setMsg]             = useState("");
+    const boo_valid_email               = useMemo(() => {
+        return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(dic_form.email.trim());
+    }, [dic_form.email]);
+    const boo_can_submit                =
+        dic_form.name.trim() &&
+        dic_form.surname.trim() &&
+        boo_valid_email &&
+        dic_form.affiliation.trim() &&
+        dic_form.profession.trim() &&
+        boo_terms &&
+        !boo_sending;
+    const fun_set                       = (str_key) => (eve_input) =>
+        setForm((dic_prev) => ({ ...dic_prev, [str_key]: eve_input.target.value }));
+    const fun_submit                    = async (eve_submit) => {
+        eve_submit.preventDefault();
+        setMsg("");
+        if (!boo_can_submit) {
+            setMsg("Please fill all required fields and accept Terms.");
+            return;
+        } //endif invalid submit
+        try {
+            setSending(true);
+            const dic_out               = await fun_fetch({  str_api: "/api/central",  str_fun: "funbck_registerrequest",  dic: dic_form  });
+            if (!dic_out.ok) {
+                throw new Error(dic_out.err || "Register failed.");
+            } //endif response invalid
+            setMsg("✅ Submitted. If accepted, you will receive an email notification.");
+            setForm({
+                name                    : "",
+                surname                 : "",
+                email                   : "",
+                affiliation             : "",
+                profession              : "",
+                talkTitle               : "",
+                merits                  : "",
+            });
+            setTerms(false);
+        } catch (err) {
+            setMsg(String(err?.message ?? err));
+        } finally {
+            setSending(false);
+        } //endtry fun_submit
+    }; //endfun fun_submit
+    return (
+        <main className="relative min-h-screen">
+            <div className="relative mx-auto flex min-h-screen max-w-5xl items-center justify-center px-6 py-16 text-zinc-100">
+                <GlassPanel str_tint="purple" className="w-full max-w-3xl px-8 py-8">
+                    <h1 className="text-3xl font-semibold">
+                        Register
+                    </h1>
+                    <p className="mt-1 text-sm text-zinc-400">
+                        Apply to participate. We’ll review your submission.
+                    </p>
+                    {/* Disclaimer */}
+                    <div className="mt-6 rounded-xl border border-white/10 bg-black/40 px-5 py-4 text-sm text-zinc-300">
+                        <p className="italic">
+                            ⚠️ Registering does not grant the right to be accepted. It only submits a request for admission.
+                            If accepted, you will receive an acceptance notification to your email address.
+                        </p>
+                    </div>
+                    <form onSubmit={fun_submit} className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2">
+                        <div>
+                            <div className={str_cn_label}>
+                                Name
+                            </div>
+                            <input
+                                className={str_cn_input}
+                                placeholder="Jane"
+                                value={dic_form.name}
+                                onChange={fun_set("name")}
+                            />
+                        </div>
+                        <div>
+                            <div className={str_cn_label}>
+                                Surname
+                            </div>
+                            <input
+                                className={str_cn_input}
+                                placeholder="Doe"
+                                value={dic_form.surname}
+                                onChange={fun_set("surname")}
+                            />
+                        </div>
+                        <div className="sm:col-span-2">
+                            <div className="flex items-baseline justify-between">
+                                <div className={str_cn_label}>
+                                    Email
+                                </div>
+                                <div className={str_cn_rlabel}>
+                                    Please provide the email address where you wish to receive the acceptance/rejection notification.
+                                </div>
+                            </div>
+                            <input
+                                className={str_cn_input}
+                                placeholder="jane.doe@university.edu"
+                                value={dic_form.email}
+                                onChange={fun_set("email")}
+                                inputMode="email"
+                            />
+                        </div>
+                        <div className="sm:col-span-2">
+                            <div className={str_cn_label}>
+                                Affiliation
+                            </div>
+                            <input
+                                className={str_cn_input}
+                                placeholder="Hospital / University / Organization"
+                                value={dic_form.affiliation}
+                                onChange={fun_set("affiliation")}
+                            />
+                        </div>
+                        <div className="sm:col-span-2">
+                            <div className={str_cn_label}>
+                                Profession
+                            </div>
+                            <input
+                                className={str_cn_input}
+                                placeholder="MD, PhD, researcher, patient advocate..."
+                                value={dic_form.profession}
+                                onChange={fun_set("profession")}
+                            />
+                        </div>
+                        {/* Label box "merits" */}
+                        <div className="sm:col-span-2">
+                            {/* Label row */}
+                            <div className="flex items-baseline justify-between">
+                                <div className={str_cn_label}>
+                                    Merits
+                                </div>
+                                <div className={str_cn_rlabel}>
+                                    Please help us to check your merits you want to highlight
+                                </div>
+                            </div>
+                            {/* End Label row */}
+                            {/* Input */}
+                            <input
+                                className={str_cn_input}
+                                placeholder="Researchgate URL: ..., Scholar: ..., Linkedin: ..."
+                                value={dic_form.merits}
+                                onChange={fun_set("merits")}
+                            />
+                            {/* End Input */}
+                        </div>
+                        {/* end Label box "merits" */}
+                        <div className="sm:col-span-2">
+                            <div className={str_cn_label}>
+                                Talk title
+                            </div>
+                            <input
+                                className={str_cn_input}
+                                placeholder="Working title of your proposal"
+                                value={dic_form.talkTitle}
+                                onChange={fun_set("talkTitle")}
+                            />
+                        </div>
+                        {/* Terms */}
+                        <div className="sm:col-span-2 mt-2 flex items-start gap-3">
+                            <button
+                              type="button"
+                              aria-label="Toggle terms acceptance"
+                              onClick={() => setTerms((v) => !v)}
+                              className={[
+                                "mt-1 flex h-5 w-5 items-center justify-center rounded-sm border transition",
+                                boo_terms
+                                  ? "border-blue-500 bg-blue-600"
+                                  : "border-zinc-400/50 bg-black/30 hover:border-blue-400",
+                              ].join(" ")}
+                            >
+                              {boo_terms ? (
+                                <span className="block h-2.5 w-2.5 rounded-[2px] bg-white" />
+                              ) : null}
+                            </button>
+                            <div className="text-sm text-zinc-300">
+                                I accept{" "}
+                                <button
+                                    type="button"
+                                    className="underline underline-offset-4 text-zinc-200"
+                                    onClick={() => setModal(true)}
+                                >
+                                    terms and services
+                                </button>
+                                .
+                                <div className="mt-1 text-xs text-zinc-500">
+                                    Clicking outside the modal closes it without accepting.
+                                </div>
+                            </div>
+                        </div>
+                        {/* Submit */}
+                        <div className="sm:col-span-2 mt-6 flex items-center justify-between gap-4">
+                            <div className="flex items-center gap-4">
+                                <button
+                                    type="submit"
+                                    disabled={!boo_can_submit}
+                                    className={[
+                                        "rounded-xl px-6 py-2 text-sm font-semibold transition",
+                                        boo_can_submit
+                                            ? "bg-white/10 hover:bg-white/15 border border-white/15"
+                                            : "bg-white/5 border border-white/10 text-zinc-500 cursor-not-allowed",
+                                    ].join(" ")}
+                                >
+                                    {boo_sending ? "Sending..." : "Submit"}
+                                </button>
+                                {str_msg ? (
+                                    <span className="text-sm text-zinc-400">
+                                        {str_msg}
+                                    </span>
+                                ) : null}
+                            </div>
+                            <Link
+                                href="/"
+                                className="inline-flex items-center rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-sm text-zinc-300 transition hover:bg-white/10"
+                            >
+                                Back
+                            </Link>
+                        </div>
+                        {/* End Submit */}
+                    </form>
+                </GlassPanel>
+                {/* Modal Terms */}
+                {boo_modal ? (
+                  <div
+                    className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-6"
+                    onMouseDown={(e) => {
+                      if (e.target === e.currentTarget) setModal(false);
+                    }}
+                  >
+                    <div className="w-full max-w-2xl rounded-2xl border border-white/10 bg-zinc-950/95 p-6 text-zinc-100 shadow-2xl">
+                      <h2 className="text-xl font-semibold">Terms and Services</h2>
+                      <div className="mt-4 max-h-[60vh] overflow-y-auto pr-2">
+                        <MDrenderer md={md_terms} />
+                      </div>
+                      <div className="mt-6 flex justify-end gap-3">
+                        <button
+                          type="button"
+                          className="rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-sm hover:bg-white/10"
+                          onClick={() => setModal(false)}
+                        >
+                          Close
+                        </button>
+                        <button
+                          type="button"
+                          className="rounded-xl border border-blue-500/60 bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-500"
+                          onClick={() => {
+                            setTerms(true);
+                            setModal(false);
+                          }}
+                        >
+                          Accept
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ) : null}
+                {/* End Modal Terms */}
+            </div>
+        </main>
+    );
+} //endfun RegisterPage
+
+# ===== components\Aboutblock.jsx =====
+"use client";
+import React                          from "react";
+import { motion }                     from "framer-motion";
+import Herocoverlat                   from "@/components/Herocoverlat.jsx";
+ * Re‑usable two‑column block used on the About page.
+ *
+ * @param {string}  str_tit        Title for the hero cover.
+ * @param {string}  str_subtit     Subtitle for the hero cover.
+ * @param {string}  str_gifname    Gif filename (without extension) for the hero cover.
+ * @param {React.FC} Content       React component to be rendered inside the frosted panel.
+ */
+export default function Aboutblock({
+  str_tit,
+  str_subtit,
+  str_gifname,
+  Content,
+}) {
+  return (
+    <div className="relative flex flex-col md:flex-row gap-10 md:gap-16 py-24">
+      {/* hero cover ------------------------------------------------------ */}
+      <div className="md:basis-1/3 w-full">
+        <Herocoverlat
+          str_tit={str_tit}
+          str_subtit={str_subtit}
+          str_gifname={str_gifname}
+        />
+      </div>
+      {/* frosted-glass panel with animated reveal ------------------------ */}
+      <motion.article
+        className="overflow-hidden relative z-10 md:basis-2/3 w-full rounded-3xl border border-zinc-900/15 dark:border-zinc-50/15 bg-white/70 dark:bg-zinc-900/60 backdrop-blur-md shadow-2xl px-8 sm:px-12 py-14 prose prose-zinc dark:prose-invert"
+        initial={{ opacity: 0, x: 100 }}
+        whileInView={{ opacity: 1, x: 0 }}
+        viewport={{ once: true, amount: 0.1 }}
+        transition={{ duration: 0.8 }}
+      >
+        {Content ? <Content /> : null}
+      </motion.article>
+      {/* subtle glow behind the panel ------------------------------------ */}
+      <motion.div
+        className="absolute md:basis-2/3 w-full rounded-3xl bg-gradient-to-br from-emerald-400/20 via-fuchsia-500/10 to-purple-600/20 blur-3xl -z-10"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 1.2, delay: 0.2 }}
+      />
+    </div>
+  );
+} //endfun Aboutblock
+
+# ===== components\Cardinfo.jsx =====
+'use client';
+import { motion } from 'framer-motion';
+import clsx from 'clsx';
+export default function Cardinfo({ title, rows, delay = 0 }) {
+  return (
+    <motion.article
+      initial={{ opacity: 0, y: 32 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.55, delay }}
+      whileHover={{ y: -6, scale: 1.02 }}
+      className={clsx(
+        'w-full', // add this
+        'flex flex-col gap-4 rounded-2xl p-6 md:p-8 backdrop-blur-md',
+        'bg-zinc-0/70 dark:bg-zinc-900/70',
+        'border border-zinc-900/15 dark:border-zinc-50/15',
+        'hover:border-zinc-900/80 dark:hover:border-zinc-50/80',
+        'transition-all duration-300'
+      )}
+    >
+      {/* ✅ Wrapper centrador */}
+      <div className="w-full mx-auto flex flex-col items-center text-center gap-6">
+        <h3 className="text-xl font-semibold italic text-secondary-500">
+          {title}
+        </h3>
+        <div className="flex flex-col gap-5">
+          {rows.map(({ label, text }) => (
+            <div key={label} className="flex flex-col items-center">
+              <p className="uppercase text-[11px] tracking-widest font-medium text-zinc-500 dark:text-zinc-400">
+                {label}
+              </p>
+              <p className="text-sm leading-relaxed text-zinc-800 dark:text-zinc-200">
+                {text}
+              </p>
+            </div>
+          ))}
+        </div>
+      </div>
+    </motion.article>
+  );
+}
+
+# ===== components\Cardinfo0.jsx =====
+'use client';
+import { motion } from 'framer-motion';
+import clsx from 'clsx';
+export default function Cardinfo({ title, rows, delay = 0 }) {
+  return (
+    <motion.article
+      initial={{ opacity: 0, y: 32 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.55, delay }}
+      whileHover={{ y: -6, scale: 1.02 }}
+      className={clsx(
+        'flex flex-col gap-4 rounded-2xl p-6 md:p-8 backdrop-blur-md',
+        'bg-zinc-0/70 dark:bg-zinc-900/70',
+        'border border-zinc-900/15 dark:border-zinc-50/15',
+        'hover:border-zinc-900/80 dark:hover:border-zinc-50/80',
+        'transition-all duration-300'
+      )}
+    >
+      <h3 className="text-xl font-semibold italic text-secondary-500 mb-2">
+        {title}
+      </h3>
+      {rows.map(({ label, text }) => (
+        <div key={label}>
+          <p className="uppercase text-[11px] tracking-widest font-medium text-zinc-500 dark:text-zinc-400">
+            {label}
+          </p>
+          <p className="text-sm leading-relaxed text-zinc-800 dark:text-zinc-200">
+            {text}
+          </p>
+        </div>
+      ))}
+    </motion.article>
+  );
+}
+
+# ===== components\ConferenceProgram.jsx =====
+"use client";
+import MDrenderer                       from "@/components/MDrenderer.jsx";
+function fun_get_item_cn(str_type) {
+    if (str_type === "opening") {
+        return "border-l-blue-400/70";
+    } //endif
+    if (str_type === "discussion") {
+        return "border-l-amber-400/70";
+    } //endif
+    if (str_type === "closing") {
+        return "border-l-fuchsia-400/70";
+    } //endif
+    return "border-l-white/15";
+} //endfun fun_get_item_cn
+function fun_get_badge(str_type) {
+    if (str_type === "opening") {
+        return "Opening";
+    } //endif
+    if (str_type === "discussion") {
+        return "Discussion";
+    } //endif
+    if (str_type === "closing") {
+        return "Closing";
+    } //endif
+    return null;
+} //endfun fun_get_badge
+function ProgramItem({ dic_item }) {
+    const str_badge                     = fun_get_badge(dic_item.str_type);
+    const str_item_cn                   = fun_get_item_cn(dic_item.str_type);
+    return (
+        <article className={`grid grid-cols-1 gap-3 border-l-2 pl-4 md:grid-cols-[132px_minmax(0,1fr)] md:gap-6 ${str_item_cn}`}>
+            {/* Time */}
+            <div className="md:pt-1">
+                <div className="inline-flex rounded-full border border-white/10 bg-white/[0.04] px-3 py-1 text-xs font-semibold tracking-[0.18em] text-zinc-300">
+                    {dic_item.time}
+                </div>
+            </div>
+            {/* End Time */}
+            {/* Content */}
+            <div>
+                <div className="flex flex-wrap items-center gap-2">
+                    <h4 className="text-base font-semibold leading-snug text-zinc-100">
+                        {dic_item.title}
+                    </h4>
+                    {str_badge ? (
+                        <span className="rounded-full border border-white/10 bg-white/[0.04] px-2 py-0.5 text-[10px] uppercase tracking-[0.18em] text-zinc-400">
+                            {str_badge}
+                        </span>
+                    ) : null}
+                </div>
+                {dic_item.description ? (
+                    <div className="mt-2 text-sm leading-7 text-zinc-300">
+                        {dic_item.description}
+                    </div>
+                ) : null}
+            </div>
+            {/* End Content */}
+        </article>
+    );
+} //endfun ProgramItem
+function ProgramBlock({ dic_block, int_index }) {
+    return (
+        <section className="rounded-2xl border border-white/10 bg-black/20 px-5 py-5 md:px-6 md:py-6">
+            {/* Block header */}
+            <div className="mb-5 flex flex-wrap items-center gap-3">
+                <div className="rounded-full border border-white/10 bg-white/[0.05] px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.22em] text-zinc-400">
+                    Block {int_index + 1}
+                </div>
+                <h3 className="text-lg font-semibold italic text-zinc-100">
+                    {dic_block.title}
+                </h3>
+            </div>
+            {/* End Block header */}
+            {dic_block.subtitle ? (
+                <>
+                    {/* Block subtitle */}
+                    <div className="mb-5 text-sm italic text-zinc-400">
+                        {dic_block.subtitle}
+                    </div>
+                    {/* End Block subtitle */}
+                </>
+            ) : null}
+            {/* Block items */}
+            <div className="space-y-6">
+                {dic_block.lis_items.map((dic_item, idx) => (
+                    <ProgramItem
+                        key={`${dic_block.title}_${dic_item.time}_${idx}`}
+                        dic_item={dic_item}
+                    />
+                ))}
+            </div>
+            {/* End Block items */}
+        </section>
+    );
+} //endfun ProgramBlock
+export default function ConferenceProgram({ dic_program }) {
+    if (!dic_program) {
+        return null;
+    } //endif
+    const lis_blocks_main               = Array.isArray(dic_program.lis_blocks) ? dic_program.lis_blocks : [];
+    const dic_intro_block               = lis_blocks_main[0]?.title === "Programa"
+        ? lis_blocks_main[0]
+        : null;
+    const lis_blocks                    = dic_intro_block ? lis_blocks_main.slice(1) : lis_blocks_main;
+    return (
+        <div className="space-y-8">
+            {/* Timezone note */}
+            {dic_program.timezone_note ? (
+                <div className="rounded-xl border border-white/10 bg-white/[0.03] px-4 py-3 text-xs italic text-zinc-400">
+                    {dic_program.timezone_note}
+                </div>
+            ) : null}
+            {/* End Timezone note */}
+            {/* Intro items */}
+            {dic_intro_block?.lis_items?.length ? (
+                <section className="space-y-4">
+                    <div className="text-sm font-semibold uppercase tracking-[0.2em] text-zinc-500">
+                        Opening
+                    </div>
+                    <div className="rounded-2xl border border-white/10 bg-black/20 px-5 py-5 md:px-6 md:py-6">
+                        <div className="space-y-6">
+                            {dic_intro_block.lis_items.map((dic_item, idx) => (
+                                <ProgramItem
+                                    key={`intro_${dic_item.time}_${idx}`}
+                                    dic_item={dic_item}
+                                />
+                            ))}
+                        </div>
+                    </div>
+                </section>
+            ) : null}
+            {/* End Intro items */}
+            {/* Main blocks */}
+            <div className="space-y-6">
+                {lis_blocks.map((dic_block, idx) => (
+                    <ProgramBlock
+                        key={`${dic_block.title}_${idx}`}
+                        dic_block={dic_block}
+                        int_index={idx}
+                    />
+                ))}
+            </div>
+            {/* End Main blocks */}
+            {/* Structure */}
+            {dic_program.structure_md ? (
+                <section className="rounded-2xl border border-white/10 bg-white/[0.03] px-5 py-5 md:px-6 md:py-6">
+                    {/* Structure header */}
+                    <h3 className="text-lg font-semibold italic text-zinc-100">
+                        Structure
+                    </h3>
+                    {/* End Structure header */}
+                    {/* Structure body */}
+                    <div className="mt-4 text-sm leading-7 text-zinc-300">
+                        <MDrenderer md={dic_program.structure_md} />
+                    </div>
+                    {/* End Structure body */}
+                </section>
+            ) : null}
+            {/* End Structure */}
+        </div>
+    );
+} //endfun ConferenceProgram
+
+# ===== components\Digifloat.jsx =====
+'use client';
+import { motion } from 'framer-motion';
+export default function Digifloat({ count = 30 }) {
+  const lis_ACGU      = ['A', 'C', 'G', 'U'];
+  const val_basedelay = 5;
+  const dots          = Array.from({ length: count }, (_, i) => {
+    const txt = Array.from({ length: 10 }, (_, k) =>
+      lis_ACGU[(i * 7 + k * 3) % 4]
+    ).join('');
+    const val_i = i;
+    return {
+      id:    val_i,
+      txt,
+      x:     (val_i * 23) % 100,
+      y:     (val_i * 41) % 100,
+      size:  0.7 + (val_i % 3) * 0.15,
+      delay: val_basedelay + (val_i % 5) * 0.4,
+      dur:   5 + (val_i % 3),
+    };
+  });
+  return (
+    <div className="pointer-events-none absolute inset-0 -z-5">
+      {dots.map(({ id, txt, x, y, size, delay, dur }) => (
+        <motion.span
+          key={id}
+          className="absolute font-mono text-black/50 select-none tracking-tight"
+          style={{ left: `${x}vw`, top: `${y}vh`, fontSize: `${size * 0.5}rem` }}
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: [0, 1, 0], y: [10, -10, 10] }}
+          transition={{ duration: dur, delay, repeat: Infinity, ease: 'easeInOut' }}
+        >
+          {txt}
+        </motion.span>
+      ))}
+    </div>
+  );
+}
+
+# ===== components\Digifloat0.jsx =====
+'use client';
+import { motion }                       from 'framer-motion';
+import { useState, useEffect, useMemo } from 'react';
+function fun_rand(seed = 1) {           // 32-bit LCG, deterministic
+  let int_state = seed >>> 0;
+  return () =>
+    ((int_state = (1664525 * int_state + 1013904223) >>> 0) / 2 ** 32);
+}
+function fun_genSeq(int_n = 1000, int_seed = 1) {  // 10-mer RNA strings
+  const fun_r        = fun_rand(int_seed);
+  const lis_letters  = ['A', 'C', 'G', 'U'];
+  return Array.from({ length: int_n }, () =>
+    Array.from({ length: 10 }, () =>
+      lis_letters[Math.floor(fun_r() * 4)]
+    ).join('')
+  );
+}
+const fun_sleep = ms => new Promise(r => setTimeout(r, ms));
+export default function Digifloat({ int_count = 40, int_stepMs = 50 }) {
+  const [lis_dots, set_dots]   = useState([]);   // ← renderable dots
+  const [int_counter, set_ctr] = useState(0);    // shared deterministic counter
+  const lis_seqBank = useMemo(() => fun_genSeq(1000, 1337), []);
+  useEffect(() => {
+    let boo_alive = true;
+    (async () => {
+      const fun_r = fun_rand(1337);      // one RNG for all dots
+      const lis_next = [];
+      for (let i = 0; i < int_count; i++) {
+        await fun_sleep(int_stepMs);     // stagger creation
+        const str_seq = lis_seqBank[int_counter % lis_seqBank.length];
+        set_ctr(prev => prev + 1);       // advance global counter
+        lis_next.push({
+          id: i,
+          txt: str_seq,
+          x: fun_r() * 100,
+          y: fun_r() * 100,
+          size: 0.4 + fun_r() * 0.6,
+          delay: fun_r() * 5,
+          dur: 5 + fun_r() * 6,
+        });
+      }
+      if (boo_alive) set_dots(lis_next);
+    })();
+    return () => {
+      boo_alive = false;                 // cleanup if component unmounts
+    };
+  }, [int_count, int_stepMs, lis_seqBank, int_counter]);
+  return (
+    <div className="pointer-events-none absolute inset-0 -z-5">
+      {lis_dots.map(({ id, txt, x, y, size, delay, dur }) => (
+        <motion.span
+          key={id}
+          className="absolute font-mono text-emerald-500/70 dark:text-emerald-300/60 select-none"
+          style={{ left: `${x}vw`, top: `${y}vh`, fontSize: `${size}rem` }}
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: [0, 1, 0], y: [10, -10, 10] }}
+          transition={{ duration: dur, delay, repeat: Infinity, ease: 'easeInOut' }}
+        >
+          {txt}
+        </motion.span>
+      ))}
+    </div>
+  );
+}
+
+# ===== components\Footer.jsx =====
+export default function Footer() {
+  return (
+    <footer className="border-t border-zinc-800 pt-8 pb-12 text-center text-xs text-zinc-400">
+      © {new Date().getFullYear()} Regeneratics. All rights reserved.
+    </footer>
+  );
+}
+
+# ===== components\GlassPanel.jsx =====
+import clsx from "clsx";
+export default function GlassPanel({ className = "", children, str_tint = "" }) {
+  const str_cn_tint =
+    str_tint === "purple"
+      ? "bg-gradient-to-br from-fuchsia-500/[0.07] via-white/[0.04] to-violet-500/[0.06]"
+      : str_tint === "blue"
+        ? "bg-gradient-to-br from-cyan-500/[0.07] via-white/[0.04] to-blue-500/[0.06]"
+        : "bg-white/[0.045]";
+  return (
+    <div
+      className={clsx(
+        "rounded-2xl border border-white/14 backdrop-blur-md",
+        "shadow-[0_12px_30px_rgba(0,0,0,0.42)]",
+        "shadow-[inset_0_1px_0_rgba(255,255,255,0.05)]",
+        str_cn_tint,
+        className
+      )}
+    >
+      {children}
+    </div>
+  );
+}
+
+# ===== components\Header.jsx =====
+"use client";
+import { useState }                 from "react";
+import { Menu }                     from "lucide-react";
+import Link                         from "next/link";
+import { usePathname }              from "next/navigation";
+import clsx                         from "clsx";
+const lis_links                      = [
+  { href: "/",         label: "home"    },
+  { href: "/about",     label: "about"   },
+  { href: "/careers",   label: "careers" },
+  { href: "/contact",   label: "contact" },
+]; // { href: "/privacy", label: "privacy" },
+const str_linkBase                   = "uppercase text-sm tracking-wide transition-colors duration-200";
+const str_linkInactive               = "text-zinc-300 dark:text-zinc-400";
+const str_linkActive                 = "text-secondary-500 font-semibold";
+const str_linkHover                  = "hover:text-gray-400 dark:hover:text-gray-300 focus-visible:text-gray-400 focus:outline-none";
+ * <Header />
+ * ---------------------------------------------------------------------------
+ * Fixed glass‑blurred top bar.
+ *
+ * – Desktop: horizontal nav with hover glow and active‑page accent.
+ * – Mobile: hamburger toggles a collapsible drawer that overlays the content
+ *   BELOW the header bar, ensuring the header height remains constant.
+ */
+export default function Header() {
+  const [boo_open, fun_setOpen]      = useState(false);
+  const str_raw                      = usePathname();
+  const str_pathname                 = str_raw === "/" ? "/" : `/${str_raw.replace(/^\//, "").split("/")[0]}`;
+  const fun_makeLinkClass            = (str_href) =>
+    clsx(str_linkBase, str_pathname === str_href ? str_linkActive : str_linkInactive, str_linkHover);
+  return (
+    <>
+      {/* Header Bar */}
+      <header className="top-0 z-50 h-14 shadow backdrop-blur-lg bg-zinc-900/70">
+        <div className="flex items-center justify-between max-w-7xl mx-auto px-4 h-full">
+          {/* Brand */}
+          <Link href="/" className="font-bold tracking-widest text-xl">
+            regeneratics
+          </Link>
+          {/* Desktop nav */}
+          <nav className="hidden md:flex gap-6">
+            {lis_links.map(({ href, label }) => (
+              <Link key={href} href={href} className={fun_makeLinkClass(href)}>
+                {label}
+              </Link>
+            ))}
+          </nav>
+          {/* Mobile hamburger */}
+          <button
+            className="md:hidden p-2"
+            onClick={() => fun_setOpen((boo_prev) => !boo_prev)}
+            aria-label="Toggle menu"
+          >
+            <Menu size={20} />
+          </button>
+        </div>
+      </header>
+      {/* Mobile drawer */}
+      <nav
+        className={clsx(
+          "md:hidden fixed inset-x-0 top-14 z-40 origin-top transition-transform bg-zinc-900/90", // positioned directly below the 56px (14) header
+          boo_open ? "scale-y-100" : "scale-y-0"
+        )}
+      >
+        <div className="flex flex-col gap-4 py-4 px-6">
+          {lis_links.map(({ href, label }) => (
+            <Link
+              key={href}
+              href={href}
+              onClick={() => fun_setOpen(false)}
+              className={fun_makeLinkClass(href)}
+            >
+              {label}
+            </Link>
+          ))}
+        </div>
+      </nav>
+    </>
+  );
+}//endfun Header
+
+# ===== components\Hero0.jsx =====
+import Image from 'next/image';
+export default function Hero({ children }) {
+  return (
+    <div className="relative h-[60vh] w-full flex items-center justify-center overflow-hidden">
+      {/* background GIF */}
+      <Image
+        src="/herovideo.gif"      // ruta relativa a /public
+        alt=""
+        fill                         // cubre todo el contenedor
+        priority                     // precarga; evita parpadeo
+        unoptimized                  // no lo convierte a WebP
+        className="object-cover"
+      />
+      {/* overlay 100 % opaco */}
+      <div className="
+        absolute inset-0 z-10 pointer-events-none /* ≃16 px de blur */
+        backdrop-blur-0
+        backdrop-saturate-30
+      "/>
+      <h1 className="relative z-10 text-4xl md:text-6xl font-extralight italic text-zinc-100 text-center">
+        {children}
+      </h1>
+    </div>
+  );
+}
+
+# ===== components\Herocover.jsx =====
+"use client";
+import React                      from "react";
+import { motion }                 from "framer-motion";
+import Link                       from 'next/link';
+export default function Herocover({ str_tit, str_subtit, str_gifname }) {
+  return (
+    <>
+      <section className="relative w-full min-h-[50vh] overflow-hidden flex items-center justify-center text-center">
+        {/* background GIF */}
+        <motion.img
+          src={`/${str_gifname}.gif`}
+          alt="Hero background"
+          className="absolute inset-0 w-full h-full object-cover z-5"
+          initial={{ opacity: 0.3 }}
+          animate={{ opacity: 0 }}
+          transition={{ delay: 5, duration: 1.2, ease: "easeInOut" }}
+        />
+        {/* animated mask layer */}
+        <motion.div
+          className="absolute inset-0 bg-white/60 dark:bg-black/60 backdrop-blur-sm z-7"
+          initial={{ opacity: 0.3 }}
+          animate={{ opacity: 0 }}
+          transition={{ delay: 5, duration: 1.2, ease: "easeInOut" }}
+        />
+        {/* Overlay text */}
+        <div className="px-4">
+          <motion.h1
+            className="text-4xl md:text-6xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-black to-gray-600 dark:from-white dark:to-gray-300 leading-relaxed pb-2"
+            initial={{ filter: "blur(8px)", opacity: 0 }}
+            animate={{ filter: "blur(0px)", opacity: 1 }}
+            transition={{ duration: 2.5, ease: "easeIn" }}
+          >
+            {str_tit}
+          </motion.h1>
+          <motion.p
+            className="font-bold text-lg md:text-xl text-gray-700 dark:text-gray-300"
+            style={{ fontFamily: `"Courier New", Courier, monospace` }}
+            initial={{ clipPath: "inset(0 100% 0 0)" }}
+            animate={{ clipPath: "inset(0 0% 0 0)" }}
+            transition={{ duration: 0.8, delay: 2.7 }}
+          >
+            {str_subtit}
+          </motion.p>
+        </div>
+      </section>
+    </>
+  );
+}
+
+# ===== components\Herocoverlat.jsx =====
+"use client";
+import React                          from "react";
+import { motion }                     from "framer-motion";
+export default function Herocoverlat({ str_tit, str_subtit, str_gifname }) { //fun Herocoverlat
+  return (
+    <> {/* fragment start */}
+      {/* hero wrapper --------------------------------------------------- */}
+      <section className="relative w-full min-h-[50vh] overflow-hidden flex items-center justify-center text-center">
+        {/* background GIF --------------------------------------------------- */}
+        <motion.img
+          src={`/${str_gifname}.gif`}
+          alt="Hero background"
+          className="absolute inset-0 w-full h-full object-cover z-5"
+          initial={{ opacity: 0 }}                               /* gif starts hidden */
+          whileInView={{ opacity: [0, 0.3, 0.3, 0] }}                /* fade in, hold, fade out */
+          viewport={{ once: false, amount: 0.1 }}                /* trigger when 30% visible */
+          transition={{
+            duration: 5,
+            times: [0, 0.2, 0.8, 1],
+            ease: "easeInOut",
+          }}
+        /> {/* end motion.img */}
+        {/* animated mask layer --------------------------------------------- */}
+        <motion.div
+          className="absolute inset-0 bg-white/60 dark:bg-white/10 backdrop-blur-sm z-7 pointer-events-none"
+          initial={{ opacity: 0 }}
+          whileInView={{ opacity: [0, 0.3, 0.3, 0] }}
+          viewport={{ amount: 0.1 }}
+          transition={{
+            duration: 5,
+            times: [0, 0.2, 0.8, 1],
+            ease: "easeInOut",
+          }}
+        /> {/* end motion.div */}
+        {/* Overlay text ----------------------------------------------------- */}
+        <div className="px-4">
+          <motion.h1
+            className="text-4xl md:text-6xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-black to-gray-600 dark:from-white dark:to-gray-300 leading-relaxed pb-2"
+            initial={{ filter: "blur(8px)", opacity: 0 }}
+            whileInView={{ filter: "blur(0px)", opacity: 1 }}
+            viewport={{ amount: 0.1 }}
+            transition={{ duration: 2.5, ease: "easeIn" }}
+          >
+            {str_tit}
+          </motion.h1>
+          <motion.p
+            className="font-bold text-lg md:text-xl text-gray-700 dark:text-gray-300"
+            style={{ fontFamily: `"Courier New", Courier, monospace` }}
+            initial={{ opacity: 0, y: 0 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ amount: 0.1 }}
+            transition={{ duration: 0.8, ease: "easeOut", delay: 0.6 }}
+          >
+            {str_subtit}
+          </motion.p>
+        </div>
+      </section> {/* end hero wrapper */}
+    </> /* end fragment */
+  );
+} //endfun Herocoverlat
+
+# ===== components\MDrenderer.jsx =====
+'use client';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
+export default function MDrenderer({ md }) {
+  if (!md) return null;
+  return (
+    <div
+      className="
+        prose prose-sm max-w-none
+        prose-p:my-2
+        prose-ul:my-2 prose-ul:pl-5
+        prose-ol:my-2 prose-ol:pl-5
+        prose-li:my-1
+        prose-strong:text-zinc-900 dark:prose-strong:text-zinc-50
+        prose-headings:text-zinc-900 dark:prose-headings:text-zinc-50
+        prose-p:text-zinc-700 dark:prose-p:text-zinc-200
+        prose-li:text-zinc-700 dark:prose-li:text-zinc-200
+        prose-a:text-blue-600 dark:prose-a:text-blue-400
+      "
+    >
+      <ReactMarkdown remarkPlugins={[remarkGfm]}>
+        {md}
+      </ReactMarkdown>
+    </div>
+  );
+}
+
+# ===== components\Panel.jsx =====
+import { motion }             from 'framer-motion';
+import clsx                   from 'clsx';
+import { useEffect, useMemo, useState } from 'react';
+import Link                   from 'next/link';
+import MDrenderer             from '@/components/MDrenderer.jsx';
+import Panelistas             from "@/components/Panelistas.jsx";
+export default function Panel({ dic_webinar, str_viewmode: str_viewmode_prop }) {
+  const str_tit               = dic_webinar.title; // se transfiere de cómo estan dirmt escritas en la db
+  const str_subtit            = dic_webinar.subtitle;
+  const str_date              = dic_webinar.startsAt;        // ISO string
+  const str_panelstate0       = dic_webinar.panelState; // x si falla la fecha. tiene este xdef.
+  const href_access           = dic_webinar.dic_urls.about;
+  const url_yt                = dic_webinar.dic_urls.yt;
+  const url_room              = dic_webinar.dic_urls.event;
+  const url_emergency_room    = dic_webinar.dic_urls.emergencyRoom;
+  const url_contact_panelist  = dic_webinar.dic_urls.contactPanelist;
+  const {delay, md_descrip, md_sugges, lis_speakernames, str_viewmode} = dic_webinar;
+  const boo_conf  = href_access.includes("conf_");
+  const str_panelstate = useMemo(() => {  // "pre"|"active"|"done"
+    if (!str_date) return str_panelstate0;
+    const tEvent = new Date(str_date).getTime();
+    if (Number.isNaN(tEvent)) return str_panelstate;
+    const now     = Date.now();
+    const week    = 7 * 24 * 3600 * 1000;
+    const day     = 24 * 3600 * 1000;
+    if (boo_conf) { // conference (congreso)
+      if (now < tEvent - 3*week) return "pre";
+      if (now <= tEvent + day)   return "active";
+    } else { // webinar
+      if (now < tEvent - week) return "pre";
+      if (now <= tEvent + day) return "active";
+    }//endif
+    return "done";
+  }, [str_date, str_panelstate0]);
+  const isPreview = str_viewmode_prop === "vprevia";
+  const isFull    = !isPreview;
+  const isPre     = str_panelstate === "pre";
+  const isActive  = str_panelstate === "active";
+  const isDone    = str_panelstate === "done";
+  const [boo_copied,  set_copied]  = useState(false);
+  const [str_countdw, set_countdw] = useState('');
+  const handleCopy = async () => {
+    if (!url_room) return;
+    await navigator.clipboard.writeText(url_room);
+    set_copied(true);
+    setTimeout(() => set_copied(false), 1500);
+  };
+  const str_basebutton =
+    'inline-flex items-center justify-center rounded-lg px-4 py-2 text-sm font-medium transition-colors focus:outline-none';
+  const btnPrimary = [
+    'bg-blue-600 text-white',
+    'hover:bg-blue-700',
+    'focus-visible:ring-2 focus-visible:ring-blue-500/50',
+  ];
+  const btnSecondary = [
+    'border border-zinc-900/20 dark:border-zinc-50/20',
+    'text-zinc-700 dark:text-zinc-200',
+    'hover:bg-zinc-900/5 dark:hover:bg-zinc-50/5',
+  ];
+  const btnGreen = [
+    'bg-emerald-600 text-white',
+    'hover:bg-emerald-700',
+    'focus-visible:ring-2 focus-visible:ring-emerald-500/50',
+  ];
+  const btnOrange = [
+    'bg-orange-600 text-white',
+    'hover:bg-orange-700',
+    'focus-visible:ring-2 focus-visible:ring-orange-500/50',
+  ];
+  useEffect(() => {
+    if (!isFull) return;
+    if (isDone) return;
+    const target = new Date(str_date);
+    const tick = () => {
+      const now = new Date();
+      const diff = target - now;
+      if (diff <= 0) {
+        set_countdw(`El ${boo_conf? "congreso": "webinar"} ha comenzado`);
+        return;
+      }
+      const totalSeconds  = Math.floor(diff / 1000);
+      const days          = Math.floor(totalSeconds / 86400);
+      const hours         = Math.floor((totalSeconds % 86400) / 3600);
+      const minutes       = Math.floor((totalSeconds % 3600) / 60);
+      const seconds       = totalSeconds % 60;
+      const parts = [];
+      if (days > 0) parts.push(`${days}d`);
+      parts.push(`${hours.toString().padStart(2, '0')}h`);
+      parts.push(`${minutes.toString().padStart(2, '0')}m`);
+      parts.push(`${seconds.toString().padStart(2, '0')}s`);
+      set_countdw(parts.join(' '));
+    };
+    tick();
+    const interval = setInterval(tick, 1000);
+    return () => clearInterval(interval);
+  }, [isFull, isDone]);
+  const str_formateddate = useMemo(() => {
+    if (!str_date) return null;
+    const d = new Date(str_date);
+    if (isNaN(d)) return null;
+    const aa = d.toLocaleString('es-ES', {
+      day: '2-digit',
+      month: 'long',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+      timeZone: 'Europe/Madrid',
+    });
+    return aa;
+  }, [str_date]);
+  const url_yt_emb = useMemo(() => {
+    if (!url_yt) return null;
+    try {
+      const u = new URL(url_yt);
+      if (u.hostname.includes('youtube.com') && u.pathname.startsWith('/embed/')) return url_yt;
+      const v = u.searchParams.get('v');
+      if (v) return `https://www.youtube.com/embed/${v}`;
+      if (u.hostname === 'youtu.be' && u.pathname.length > 1) {
+        return `https://www.youtube.com/embed/${u.pathname.slice(1)}`;
+      }
+      return url_yt;
+    } catch {
+      return url_yt;
+    }
+  }, [url_yt]);
+  return (
+    <motion.article
+      initial={{ opacity: 0, y: 32 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.55, delay }}
+      className={clsx(
+        'flex flex-col gap-4 rounded-2xl p-6 md:p-8 backdrop-blur-md',
+        'bg-zinc-0/70 dark:bg-zinc-900/70',
+        'border border-zinc-900/15 dark:border-zinc-50/15',
+        'hover:border-zinc-900/80 dark:hover:border-zinc-50/80',
+        'transition-all duration-300'
+      )}
+    >
+      {/* Header (siempre) */}
+      <header className="flex flex-col gap-1">
+        <h2 className="text-2xl font-semibold italic text-secondary-500">{str_tit}</h2>
+        <p className="text-sm tracking-wide text-zinc-500 dark:text-zinc-400">{str_subtit}</p>
+        {str_formateddate && (
+          <p className="text-sm tracking-wide text-zinc-500 dark:text-zinc-400">{str_formateddate}</p>
+        )}
+        {/* countdown solo full y no done */}
+        {isFull && !isDone && (
+          <div className="mt-3 flex items-baseline gap-2">
+            <span className="text-sm tracking-wide text-zinc-500 dark:text-zinc-400">
+              Empieza en:
+            </span>
+            <span className="text-sm font-medium tabular-nums text-zinc-800 dark:text-zinc-200">
+              {str_countdw}
+            </span>
+          </div>
+        )}
+      </header>
+      {/* ✅ Vista previa: solo botón de acceder + (opcional) un mini texto */}
+      {isPreview && (
+        <div className="mt-2 flex flex-wrap gap-3">
+          {href_access ? (
+            <Link href={href_access} className={clsx(str_basebutton, btnPrimary)}>
+              Acceder
+            </Link>
+          ) : (
+            <span className="text-sm text-zinc-500 dark:text-zinc-400">
+              (Falta href_access)
+            </span>
+          )}
+        </div>
+      )}
+      {/* ✅ FULL mode */}
+      {isFull && (
+        <>
+          {/* Zona intermedia: active -> instrucciones, done -> youtube */}
+          {(isActive || isDone) && (
+            <div
+              className={clsx(
+                'mt-2 rounded-xl px-4 py-3 text-sm leading-relaxed',
+                'bg-zinc-50/70 text-zinc-700 border border-zinc-900/10',
+                'dark:bg-zinc-950/30 dark:text-zinc-200 dark:border-zinc-50/10'
+              )}
+            >
+              {isActive && (
+                <div className="mt-2 text-sm leading-relaxed text-zinc-800 dark:text-zinc-200">
+                  <MDrenderer md={md_sugges}/>
+                </div>)}
+              {isDone && url_yt_emb && false && ( // <---------[!]: se ha metido un "false" a pelo para inhibir render video
+                <div className="w-full max-w-3xl mx-auto">
+                  <div
+                    className="relative w-full overflow-hidden rounded-lg"
+                    style={{ paddingTop: '56.25%' }}
+                  >
+                    <iframe
+                      className="absolute inset-0 h-full w-full"
+                      src={url_yt_emb}
+                      title={boo_conf? "conference": "webinar"}
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                      allowFullScreen
+                    />
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+          {/* Description (siempre en full) */}
+          {(isActive || isDone) && md_descrip && (
+            <div className="mt-2 text-sm leading-relaxed text-zinc-800 dark:text-zinc-200">
+              <MDrenderer md={md_descrip}/>
+            </div>
+          )}
+          {/* Botones PRE */}
+          {isPre && (
+            <div className="mt-2 flex flex-wrap gap-3">
+              {url_contact_panelist && (
+                <a
+                  href={url_contact_panelist}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className={clsx(str_basebutton, btnGreen)}
+                >
+                  Quiero ser panelista
+                </a>
+              )}
+              {/* Volver a dashboard edu */}
+              <Link href={"/edu"} className={clsx(str_basebutton, btnSecondary)}>
+                Volver
+              </Link>
+            </div>
+          )}
+          {/* Botones ACTIVE */}
+          {isActive && (
+            <>
+              <div className="mt-2 flex flex-wrap gap-3">
+                {url_room && (
+                  <a
+                    href={url_room}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className={clsx(str_basebutton, btnPrimary)}
+                  >
+                    Ir a zoom session
+                  </a>
+                )}
+                {url_room && (
+                  <button type="button" onClick={handleCopy} className={clsx(str_basebutton, btnSecondary)}>
+                    {boo_copied ? 'Copiado ✓' : 'Copiar link'}
+                  </button>
+                )}
+                {/* Volver a dashboard edu */}
+                <Link href={"/edu"} className={clsx(str_basebutton, btnSecondary)}>
+                  Volver
+                </Link>
+              </div>
+              {url_emergency_room && (
+                <p className="mt-2 text-sm leading-relaxed text-zinc-800 dark:text-zinc-200">
+                  Sala preliminar (panelistas) 10 minutos antes, para incidencias técnicas.
+                </p>
+              )}
+              <div className="mt-2 flex flex-wrap gap-3">
+                {url_emergency_room && (
+                  <a
+                    href={url_emergency_room}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className={clsx(str_basebutton, btnOrange)}
+                  >
+                    Sala preliminar
+                  </a>
+                )}
+              </div>
+            </>
+          )}
+          {/*end botones active*/}
+          {/* Botones DONE */}
+          {isDone && (
+            <div className="mt-2 flex flex-wrap gap-3">
+              {/* Volver a dashboard edu */}
+              <Link href={"/edu"} className={clsx(str_basebutton, btnSecondary)}>
+                Volver
+              </Link>
+            </div>
+          )}
+          {/* DONE sin youtube: si quieres un fallback */}
+          {isDone && !url_yt_emb && (
+            <p className="mt-2 text-sm text-zinc-500 dark:text-zinc-400">
+              Grabación no disponible.
+            </p>
+          )}
+          {/* panel de speakers */}
+          {(isActive || isDone) && (
+              <div className="mt-4">
+                <Panelistas lis_speakernames={lis_speakernames}/>
+              </div>
+            )
+          } {/* end speakers */}
+        </>
+      )}   {/*end full mode*/}
+    </motion.article>
+  );
+}
+
+# ===== components\Panelistas.jsx =====
+"use client";
+import { useMemo, useState, useEffect }          from "react";
+import Image                from "next/image";
+import { motion }           from "framer-motion";
+import { fun_fetch }        from "@/utils/front/mod_front.js";
+const dc2_leftvaris         = { hidden: { x: -80, opacity: 0 }, show: { x: 0, opacity: 1 } };
+const dc2_rightvaris        = { hidden: { x: 80, opacity: 0 }, show: { x: 0, opacity: 1 } };
+function fun2_name(dic) { // :dev 20260224_1033. mirar la misma nota yyyymmdd.. en mod_back se pueden ir metiendo más casos de uso, como por ejemplo meter como arg dirmt el nombre
+  let resp = dic.name;
+  if (dic.tto) { // si hay campo de tratamiento, lo añade (eg, PhD, MD)
+    resp = `${resp}, ${dic.tto}`;
+  }//if tratamiento PhD, MD,..
+  return resp;
+}//endfun fun2_name
+export default function Panelistas({ lis_speakernames, str_className = "" }) {
+  const [lsd_sorted, set_lsd_sorted] = useState([]);
+  useEffect(() => {
+    async function fun_names2lsd() {
+      const form_1 = new FormData();
+      form_1.set("lis_speakernames", JSON.stringify(lis_speakernames)); // ✅ if it's an array
+      const resp = await fun_fetch({ str_api: "/api/central", form: form_1, str_fun: "funbck_getdetailspeakers" });
+      const lsd = Object.entries(resp.resp ?? {}).map(([key, dic]) => ({
+        key,
+        name: fun2_name(dic),
+        descrip: dic?.descrip ?? "",
+        url: dic?.url ?? null,
+      }));
+      debugger;
+      set_lsd_sorted(lsd.sort((a, b) => a.name.localeCompare(b.name)));
+    }//endfun fun_names2lsd
+    if (lis_speakernames?.length) fun_names2lsd();
+  }, [lis_speakernames]);
+  return (
+    <section className={["w-full", str_className].join(" ")}>
+      <div className="flex items-baseline justify-between gap-4">
+        <h2 className="text-xl font-semibold text-zinc-900 dark:text-zinc-50">Panelistas</h2>
+        <p className="text-sm text-zinc-500 dark:text-zinc-400">Alfabéticamente</p>
+      </div>
+      <div className="mt-6 flex flex-col items-center gap-10">
+        {lsd_sorted.map((dic_member, index) => (
+          <div  key={dic_member.key}  className="w-full max-w-[920px]    flex items-stretch justify-center gap-7    max-sm:flex-col max-sm:gap-3">
+          <motion.div
+          initial="hidden" whileInView="show" viewport={{ once: true, amount: 0.4 }}
+          variants={dc2_leftvaris}
+          transition={{ type: "spring", stiffness: 70, damping: 18, delay: index * 0.08 }}
+          className="relative flex items-center justify-center w-[260px] h-[170px] max-sm:w-full max-sm:h-[120px] bg-white/10 border border-white/10 backdrop-blur-md shadow-[0_12px_30px_rgba(0,0,0,0.55)] [clip-path:polygon(0_0,100%_0,100%_calc(100%_-_40px),calc(100%_-_40px)_100%,0_100%)] max-sm:[clip-path:polygon(0_0,100%_0,100%_100%,0_100%)]"
+          >
+            <div className="relative h-24 w-24 max-sm:h-20 max-sm:w-20 overflow-hidden rounded-full shadow-[0_0_20px_rgba(0,0,0,0.6)]">
+              {dic_member.url ? (
+                <Image src={dic_member.url} alt={dic_member.name} fill sizes="96px" className="object-cover" />
+              ) : (
+                <div className="flex h-full w-full items-center justify-center bg-zinc-900/30 text-xs text-zinc-200">no img</div>
+              )}
+            </div>
+          </motion.div>
+          <motion.div
+          initial="hidden" whileInView="show" viewport={{ once: true, amount: 0.4 }}
+          variants={dc2_rightvaris}
+          transition={{ type: "spring", stiffness: 70, damping: 18, delay: index * 0.08 + 0.05 }}
+          className="relative flex flex-col justify-center w-[640px] min-h-[170px] max-sm:w-full max-sm:min-h-0 bg-black/40 px-7 py-5 max-sm:px-4 max-sm:py-4 border border-white/10 backdrop-blur-md shadow-[0_12px_30px_rgba(0,0,0,0.55)] [clip-path:polygon(40px_0,100%_0,100%_100%,0_100%,0_40px)] max-sm:[clip-path:polygon(0_0,100%_0,100%_100%,0_100%)]"
+          >
+            <h3 className="mb-2 text-[1.05rem] max-sm:text-[1rem] font-semibold text-white">{dic_member.name}</h3>
+            <p className="text-[0.85rem] max-sm:text-[0.8rem] leading-relaxed text-[#00ff5c] [text-shadow:0_0_6px_rgba(0,255,92,0.3)]">
+              {dic_member.descrip}
+            </p>
+          </motion.div>
+          </div>
+        ))} {/*end for dic_member ~dc2_speakers in lsd_sorted*/}
+      </div>
+    </section>
+  );
+}
+
+# ===== components\Section.jsx =====
+export default function Section({ id, title, children }) {
+  return (
+    <section id={id} className="max-w-5xl mx-auto py-16">
+      <h2 className="text-3xl font-semibold mb-8 text-secondary-500 italic capitalize">
+        {title}
+      </h2>
+      {children}
+    </section>
+  );
+}
+
+# ===== components\Virusbglayer.jsx =====
+import { useMemo } from "react";
+function Virusbglayer() {
+  const viruses = useMemo(
+    () =>
+      Array.from({ length: 180 }, (_, i) => {
+        const depth = Math.random() * 0.9 + 0.2;
+        const size = 10 + depth * 28;
+        const left = Math.random() * 100;
+        const top = Math.random() * 100;
+        const duration = 18 + Math.random() * 28;
+        const delay = -Math.random() * 40;
+        const driftX = 8 + Math.random() * 26;
+        const driftY = 2 + Math.random() * 10;
+        const blur = (1.4 - depth) * 2.2;
+        const opacity = 0.22 + depth * 0.42;
+        const stroke = 0.9 + depth * 1.6;
+        const spikes = 10 + (i % 4);
+        return {
+          id: i,
+          depth,
+          size,
+          left,
+          top,
+          duration,
+          delay,
+          driftX,
+          driftY,
+          blur,
+          opacity,
+          stroke,
+          spikes,
+        };
+      }),
+    []
+  );
+  const str_purple = "#3a2047";
+  return (
+    <div className="pointer-events-none absolute inset-0 overflow-hidden">
+      <style>{`
+        @keyframes virusDrift {
+          0% {
+            transform: translate3d(calc(var(--drift-x) * -1), calc(var(--drift-y) * -1), 0);
+          }
+          25% {
+            transform: translate3d(calc(var(--drift-x) * 0.35), calc(var(--drift-y) * 0.25), 0);
+          }
+          50% {
+            transform: translate3d(var(--drift-x), var(--drift-y), 0);
+          }
+          75% {
+            transform: translate3d(calc(var(--drift-x) * -0.25), calc(var(--drift-y) * 0.4), 0);
+          }
+          100% {
+            transform: translate3d(calc(var(--drift-x) * -1), calc(var(--drift-y) * -1), 0);
+          }
+        }
+        @keyframes virusSpin {
+          0% {
+            transform: rotate(0deg);
+          }
+          100% {
+            transform: rotate(360deg);
+          }
+        }
+        .virus-wrap {
+          position: absolute;
+          transform: translate(-50%, -50%);
+        }
+        .virus-drift {
+          will-change: transform;
+          animation: virusDrift var(--duration) ease-in-out infinite;
+          animation-delay: var(--delay);
+          transform-origin: center;
+        }
+        .virus-svg {
+          display: block;
+          overflow: visible;
+          animation: virusSpin calc(var(--duration) * 2.2) linear infinite;
+          animation-delay: var(--delay);
+          filter: blur(var(--blur));
+          opacity: var(--opacity);
+        }
+      `}</style>
+      {viruses.map((v) => {
+        const spokes = Array.from({ length: v.spikes }, (_, idx) => {
+          const angle = (Math.PI * 2 * idx) / v.spikes;
+          const r = 18;
+          const spikeLen = 8;
+          const x1 = 32 + Math.cos(angle) * r;
+          const y1 = 32 + Math.sin(angle) * r;
+          const x2 = 32 + Math.cos(angle) * (r + spikeLen);
+          const y2 = 32 + Math.sin(angle) * (r + spikeLen);
+          return { x1, y1, x2, y2, idx };
+        });
+        return (
+          <div
+            key={v.id}
+            className="virus-wrap"
+            style={{
+              left: `${v.left}%`,
+              top: `${v.top}%`,
+            }}
+          >
+            <div
+              className="virus-drift"
+              style={{
+                ['--duration']: `${v.duration}s`,
+                ['--delay']: `${v.delay}s`,
+                ['--drift-x']: `${v.driftX}px`,
+                ['--drift-y']: `${v.driftY}px`,
+                ['--blur']: `${v.blur}px`,
+                ['--opacity']: v.opacity,
+                transform: `scale(${v.depth})`,
+              }}
+            >
+            <svg
+              className="virus-svg"
+              width={v.size}
+              height={v.size}
+              viewBox="0 0 64 64"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg"
+              aria-hidden="true"
+            >
+              {spokes.map((s) => (
+                <g key={s.idx}>
+                  <line
+                    x1={s.x1}
+                    y1={s.y1}
+                    x2={s.x2}
+                    y2={s.y2}
+                    stroke={str_purple}
+                    strokeWidth={v.stroke}
+                    strokeLinecap="round"
+                  />
+                  <circle cx={s.x2} cy={s.y2} r={1.7 + v.depth * 0.9} fill={str_purple} />
+                </g>
+              ))}
+              <circle
+                cx="32"
+                cy="32"
+                r="18"
+                stroke={str_purple}
+                strokeWidth={v.stroke * 1.15}
+              />
+            </svg>
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+export default Virusbglayer;
+
+# ===== content\md_terms.js =====
+const md_terms = `
+## Data protection and digital presence
+By submitting this form, you acknowledge and accept the following:
+### 1. Web presence and communications
+Information about the conference is available through **longcovidconference.com** and may also be published at **regeneratics.com/edu/conf_lcdd_mar2026**, or under a dedicated domain in current or future editions.
+Electronic communications and online publication are framed within applicable digital communication rules, including basic provider transparency and electronic communication requirements.
+### 2. Privacy, image and recording
+The event will be held through **Zoom**, and it will be **recorded** and **published** on the official YouTube channel of **@regeneratics**.
+The recording may also be:
+- shared with other formal organizers of the event,
+- excerpted or clipped for promotion of future editions of the conference,
+- excerpted or clipped for related webinars or educational activities organized by the organizer.
+Public images may also be used for the conference identity and communication materials.
+### 3. Registration and selection
+Submitting this form **does not imply acceptance** as a participant or panelist. It only registers a request for admission.
+If your application is accepted, you will receive a notification at the email address provided in this form.
+### 4. Data processing
+The personal data submitted in this form will be processed exclusively for:
+- handling your registration request,
+- contacting you about the status of your application,
+- organizing participation logistics if you are accepted.
+Your data will not be used for unrelated purposes.
+### 5. Consent
+By clicking **Accept**, you confirm that:
+- the information provided is accurate,
+- you consent to the processing of your data for the purposes described above,
+- you understand that the event may be recorded and publicly disseminated.
+`;
+export default md_terms;
+
+# ===== utils\back\mod_auxi.js =====
+import fs                                     from "node:fs/promises";
+import path                                   from "node:path";
+import { pathToFileURL }                      from "node:url";
+import { MongoClient }                        from "mongodb";
+import { put }                                from "@vercel/blob";
+export async function fun2_rutabase(startDir = process.cwd()) {
+  let dir = startDir;
+  while (true) {
+    const pkg = path.join(dir, "package.json");
+    try {
+      await fs.access(pkg);
+      return dir; // ✅ basta con package.json
+    } catch {}
+    const parent = path.dirname(dir);
+    if (parent === dir) break;
+    dir = parent;
+  }
+  throw new Error("Project root not found (package.json)");
+}//endfun fun2_rutabase
+export async function fun2_env(str_key) {
+  let resp;
+  if (process.env.NODE_ENV === undefined) {
+    const root                                 = await fun2_rutabase();
+    const envPath                              = path.join(root, ".env.local");
+    const raw                                  = (await fs.readFile(envPath, "utf8")).replace(/\r\n/g, "\n");
+    const keyEsc                               = str_key.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    const re                                   = new RegExp(`^${keyEsc}=(.*)$`, "m");
+    const m                                    = raw.match(re);
+    if (!m) return null;
+    resp =  m[1].trim().replace(/^"(.*)"$/, "$1").replace(/^'(.*)'$/, "$1");
+  } else { // run en api
+    resp = process.env[str_key];
+  } //endif run stdalone
+  return resp;
+} //endfun fun2_env
+export async function fun2_mongocli() {
+  const uri                                  = await fun2_env("MONGODB_URI");
+  if (!uri) throw new Error("Missing MONGODB_URI in .env.local");
+  const client                               = new MongoClient(uri);
+  await client.connect();
+  return client;
+} //endfun fun2_mongocli
+export async function fun2_rutimages(str_dir) {
+  const set_imgexts                          = new Set([".png", ".jpg", ".jpeg", ".webp", ".gif", ".avif", ".bmp", ".tiff"]);
+  const lsd_entries                          = await fs.readdir(str_dir, { withFileTypes: true });
+  const lis_files                            = lsd_entries
+                                                .filter(dic_e => dic_e.isFile())
+                                                .map(dic_e => dic_e.name)
+                                                .filter(str_name => set_imgexts.has(path.extname(str_name).toLowerCase()))
+                                                .sort();
+  const lsd_items                            = lis_files.map(str_filename => {
+                                                const str_fullpath        = path.join(str_dir, str_filename);
+                                                const str_uri             = pathToFileURL(str_fullpath).href;
+                                                const str_nombre          = path.parse(str_filename).name;
+                                                return { filename:        str_filename,
+                                                         fullpath:        str_fullpath,
+                                                         uri:             str_uri,
+                                                         nombre:          str_nombre
+                                                       };
+                                              });
+  return lsd_items;
+} //endfun fun2_rutimages
+export async function fun2_upblob(str_blob_prefix, pat_file) {
+  const bin_buf                               = await fs.readFile(pat_file);
+  const str_blob_pathname                     = `${str_blob_prefix}${  path.parse(pat_file).base  }`;
+  const dic_blob                              = await put(str_blob_pathname, bin_buf, {
+                                                  access:                  "public",
+                                                  addRandomSuffix:         false, // no-dupli. eg, alfonso_martinez-gallarza.png
+                                                  token:                   await fun2_env("BLOB_READ_WRITE_TOKEN"),
+                                                  allowOverwrite:          true,
+                                              }); //enddic dic_blob
+  return { url: dic_blob.url,  uri_vercel: dic_blob.pathname };
+} //endfun fun_upblob
+export async function fun2_getcache(str_json) { // solo name sin ext, sin el .json
+  const rut_base                                = await fun2_rutabase();
+  const pat_cache                               = path.join(rut_base, `public/cache/${str_json}.json`);
+  let resp;
+  try {
+    const str_cache = await fs.readFile(pat_cache, "utf8");
+    const dic_cache = JSON.parse(str_cache);
+    resp = {ok: true, dic_cache: dic_cache};
+  } catch {
+    resp = {ok: false, err: `public/cache/${str_json} failed`};
+  }//endtry
+  return resp;
+}//endfun fun2_getcache
+export async function fun2_setcache(str_json, dic_cache) { // solo name sin ext, sin el .json
+  const rut_base  = await fun2_rutabase();
+  const pat_cache = path.join(rut_base, `public/cache/${str_json}.json`);
+  let resp;
+  try {
+    await fs.mkdir(path.dirname(pat_cache), { recursive: true });
+    const str_out = JSON.stringify(dic_cache, null, 2);
+    await fs.writeFile(pat_cache, str_out, "utf8");
+    resp = { ok: true, pat_cache };
+  } catch (err) {
+    resp = { ok: false, err: `${pat_cache} write failed: ${err?.message ?? err}` };
+  }
+  return resp;
+}//endfun fun2_setcache
+
+# ===== utils\back\mod_back.js =====
+import nodemailer                           from "nodemailer";  //used by funbck_registerrequest
+import clientPromise                        from "@/utils/back/mongo.server.js";
+import fs                                   from "node:fs/promises";
+import path                                 from "node:path";
+import {  fun2_env,
+          fun2_getcache,
+          fun2_mongocli,
+          fun2_setcache,
+          fun2_rutabase}                    from "./mod_auxi.js" // jit stdalone testing
+function fun2_normalizeMd(md) {
+  return md
+    ?.replace(/\r\n/g, "\n")
+    ?.replace(/\t/g, "  ")
+    ?.trim() || null;
+}//endfun fun2_normalizeMd
+export async function funbck_getwebinar(dic_in) {
+  const slug    = dic_in.slug; // caso especial, slug = "all" -> devuelve lista de docs en vez de un doc
+  if (!slug)    throw new Error("Missing slug");
+  const client  = await clientPromise;
+  const db      = client.db( process.env.MONGODB_NAME ?? "regen" );
+  let resp;
+  if (slug !== "all") {
+    resp = await db.collection("webinars").findOne({ slug });
+    resp = resp.dc2_webinar; // en db es así
+    await fun2_setcache(dic_in.slug, resp);
+  } else { // slug all.
+    const rut_base            = await fun2_rutabase();
+    const rut_cache           = path.join(rut_base, "public/cache");
+    const dic_by_slug = new Map;
+    const lis_docs = await db
+      .collection("webinars")
+      .find(
+        { slug: /^(webi_|conf_)/ },
+        { projection: { slug: 1, dc2_webinar: 1, _id: 0 } }
+      )
+      .toArray();
+    for (const d of lis_docs) {
+      if (d?.slug && d?.dc2_webinar) {
+        dic_by_slug.set(d.slug, d.dc2_webinar);
+        await fun2_setcache(d.slug, d.dc2_webinar);
+      }//endif
+    }//endfor
+    resp = Array.from(dic_by_slug.values());
+  } // if not slug all;  else
+  return resp;  // list of dc2_webinar elements (slug==all)  OR  un elem dc2_webinar (slug==slug_i)
+}//endfun funbck_getwebinar
+export async function funbck_getdetailspeakers(dic_in) { // {lis_speakernames,  slug_webi}
+  const lis_speakernames                        = JSON.parse(dic_in?.lis_speakernames) ?? null;
+  if (!Array.isArray(lis_speakernames))         throw new Error("Missing lis_speakernames (array)");
+  if (lis_speakernames.length === 0)            return { lis_speakernames: [], dc2_speakers: {}, missing: [] };
+  let fru, dc2_speakers, dc2_webispeakers;
+  const client                                = await clientPromise; // asumes conocido en tu repo
+  const db                                    = client.db( await fun2_env("MONGODB_NAME") ); // se recomienda cambiar esa linea por hardcode:  `client.db("regen");`
+  const dic_doc                               = await db.collection("webinars").findOne(
+                                                  { slug:                     "speakers" },
+                                                  { projection:               { _id: 0, slug: 1, dc2_speakers: 1 } }
+                                              ); //end findOne
+  dc2_speakers                                = dic_doc?.dc2_speakers ?? {};  // antes se cargaba de: `await fun2_setcache("dc2_speakers", dc2_speakers);`, pero se quitó xq entonces no se actualizaba cn nuevos datos en la nube
+  debugger; // funbck_getdetailspeakers
+  const dc2_out                                 = {};
+  for (let int_i = 0; int_i < lis_speakernames.length; int_i += 1) {
+    const key_speaker                            = lis_speakernames[int_i];
+    const dic_speaker                            = dc2_speakers[key_speaker] ?? null;
+    if (!dic_speaker) {
+      console.log(`⚠️ funbck_getdetailspeakers: missing speaker key: ${key_speaker}`);
+    }//endif
+    dc2_out[key_speaker]                         = {
+      name:                                     dic_speaker.name,
+      tto:                                      dic_speaker.tto ?? null, // :dev 20260224_1033. mirar la misma nota yyyymmdd.. en /components/Panelistas, pues el cambio está en los dos sitios
+      descrip:                                  dic_speaker.descrip ?? null,
+      url:                                      dic_speaker.dic_imgmeta?.url ?? null,
+      uri_vercel:                               dic_speaker.dic_imgmeta?.uri_vercel ?? null
+    }; //enddic dc2_out
+  }//endfor speaker_i
+  debugger;
+  return dc2_out;
+} //endfun funbck_getdetailspeakers
+export async function funbck_admin_refreshcache(dic_in) { //onlyadmin
+  const slug = dic_in?.slug ?? null;
+  if (!slug) throw new Error("Missing slug");
+  if (dic_in?.admin_token !== await fun2_env("REG_ADMIN_TOKEN")) {
+    throw new Error("unauthorized");
+  }
+  const client = await fun2_mongocli();
+  const db     = client.db(await fun2_env("MONGODB_NAME"));
+  if (slug === "webiall") {
+    const lis_docs = await db.collection("webinars")
+      .find({ slug: /^webi_/ }, { projection: { _id: 0, slug: 1, dc2_webinar: 1 } })
+      .toArray();
+    for (const d of lis_docs) {
+      if (!d?.slug) continue;
+      await fun2_setcache(d.slug, d.dc2_webinar ?? null);
+    }
+    return { ok: true, slug: "all", n: lis_docs.length };
+  }//endif webiall
+  if (slug.startsWith("webi_")) {
+    const doc = await db.collection("webinars").findOne(
+      { slug },
+      { projection: { _id: 0, slug: 1, dc2_webinar: 1 } }
+    );
+    const dc2_webinar = doc?.dc2_webinar ?? null;
+    if (!dc2_webinar) return { ok: false, err: `slug not found: ${slug}` };
+    await fun2_setcache(slug, dc2_webinar);
+    return { ok: true, slug };
+  }//endif webi_
+  if (slug === "all") {
+    await funbck_admin_refreshcache({...dic_in, slug:"webiall"});
+    await funbck_admin_refreshcache({...dic_in, slug:"speakers"});
+  }//endif all
+  if (slug === "speakers") {
+    const doc = await db.collection("webinars").findOne(
+      { slug },
+      { projection: { _id: 0, slug: 1, dc2_speakers: 1 } }
+    );
+    const dc2_speakers = doc?.dc2_speakers ?? null;
+    if (!dc2_speakers) return { ok: false, err: `slug not found: ${slug}` };
+    await fun2_setcache("dc2_speakers", dc2_speakers);
+    return { ok: true, slug };
+  }//endif speakers
+  const doc = await db.collection("webinars").findOne(
+    { slug },
+    { projection: { _id: 0, slug: 1, [slug]: 1 } }
+  );
+  const fru = doc?.[slug] ?? null;
+  if (!fru) return { ok: false, err: `slug not found: ${slug}` };
+  await fun2_setcache(slug, fru);
+  return { ok: true, slug };
+}//endfun funbck_admin_refreshcache
+function fun2_maskuri(str) {
+  if (!str) return null;
+  try {
+    const u = new URL(str);
+    const user = u.username ? `${u.username.slice(0, 2)}***` : "";
+    const host = u.host ?? "";
+    const db   = u.pathname ?? "";
+    return `${u.protocol}//${user}${user ? ":***@" : ""}${host}${db}`;
+  } catch {
+    return str.slice(0, 8) + "***";
+  }
+}
+async function fun2_readjsonifexists(pat) {
+  try {
+    const str = await fs.readFile(pat, "utf8");
+    return { ok: true, json: JSON.parse(str) };
+  } catch (e) {
+    return { ok: false, err: e?.message ?? String(e) };
+  }
+}
+export async function funbck_test(dic_in, request) {
+  const str_nodeenv     = process.env.NODE_ENV ?? null;
+  const str_mongodb_name = process.env.MONGODB_NAME ?? null;
+  const mongodb_uri_raw = process.env.MONGODB_URI ?? null;
+  const str_mongodburi_present = Boolean(mongodb_uri_raw);
+  const str_mongodburi = fun2_maskuri(mongodb_uri_raw);
+  const rut_cache = path.join(process.cwd(), "public", "cache");
+  const out_speakers = await fun2_readjsonifexists(path.join(rut_cache, "dc2_speakers.json"));
+  const out_webinar  = await fun2_readjsonifexists(path.join(rut_cache, "webi_lc_dec2025.json"));
+  const dc2_speakers = out_speakers.ok ? out_speakers.json : null;
+  const dc2_webinar  = out_webinar.ok  ? out_webinar.json  : null;
+  return {
+    str_nodeenv,
+    str_mongodb_name,
+    str_mongodburi_present,
+    str_mongodburi,
+    rut_cache,
+    cache_files: {
+      "dc2_speakers.json": out_speakers.ok ? "ok" : out_speakers.err,
+      "webi_lc_dec2025.json": out_webinar.ok ? "ok" : out_webinar.err,
+    },
+    dc2_speakers,
+    dc2_webinar,
+  };
+}
+export async function funbck_registerrequest(dic_in, request) {
+    debugger;
+    function clean(str_value) {
+        return String(str_value ?? "").trim();
+    } //endfun clean
+    try {
+        const str_name                  = clean(dic_in.name);
+        const str_surname               = clean(dic_in.surname);
+        const str_email                 = clean(dic_in.email);
+        const str_affiliation           = clean(dic_in.affiliation);
+        const str_profession            = clean(dic_in.profession);
+        const str_talk_title            = clean(dic_in.talkTitle);
+        const str_merits                = clean(dic_in.merits);
+        if (!str_name || !str_surname || !str_email || !str_affiliation || !str_profession) {
+            throw new Error("funbck_registerrequest: Missing required fields.");
+        } //endif required fields
+        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(str_email)) {
+            return bad("Invalid email.");
+        } //endif invalid email
+        const cli_mongo                 = await clientPromise;
+        const db_mongo                  = cli_mongo.db(process.env.MONGODB_NAME ?? "regen");
+        const dic_doc                   = {
+            name                        : str_name,
+            surname                     : str_surname,
+            email                       : str_email,
+            affiliation                 : str_affiliation,
+            profession                  : str_profession,
+            talkTitle                   : str_talk_title || null,
+            merits                      : str_merits,
+            createdAt                   : new Date(),
+            meta                        : {
+                userAgent               : request.headers.get("user-agent") ?? null,
+                ip                      : (request.headers.get("x-forwarded-for") ?? "").split(",")[0].trim() || null,
+            },
+            source                      : "lcdd_register",
+        };
+        const dic_ins                   = await db_mongo.collection("lcdd_register").insertOne(dic_doc);
+        const str_email_host            = clean(process.env.SMTP_HOST);
+        const str_email_port            = Number(process.env.SMTP_PORT ?? 587);
+        const boo_email_secure          = process.env.SMTP_SECURE === "true";
+        const str_email_user            = clean(process.env.SMTP_USER);
+        const str_email_pass            = clean(process.env.SMTP_PASS);
+        const str_email_from            = clean(process.env.MAIL_FROM || str_email_user);
+        const str_email_to              = clean(process.env.MAIL_TO || str_email_user);
+        let str_emailwarn               = null;
+        let dic_mail_result             = null;
+        if (str_email_host && str_email_user && str_email_pass) {
+            try {
+                const obj_transporter   = nodemailer.createTransport({
+                    host                : str_email_host,
+                    port                : str_email_port,
+                    secure              : boo_email_secure,
+                    auth                : {
+                        user            : str_email_user,
+                        pass            : str_email_pass,
+                    },
+                });
+                await obj_transporter.verify();
+                const str_text                      =
+                    `New registration request:\n\n`                   +
+                    `Name: ${str_name}\n`                             +
+                    `Surname: ${str_surname}\n`                       +
+                    `Email: ${str_email}\n`                           +
+                    `Affiliation: ${str_affiliation}\n`               +
+                    `Profession: ${str_profession}\n`                 +
+                    `Merits: ${str_merits}\n`                         +
+                    `Talk title: ${str_talk_title || "(empty)"}\n\n` +
+                    `InsertedId: ${String(dic_ins.insertedId)}\n`;
+                dic_mail_result               = await funbck_sendmail({
+                    subject                         : `LCDD Registration: ${str_name} ${str_surname}`,
+                    text                            : str_text,
+                    replyTo                         : str_email,
+                    fromName                        : "LCDD Register",
+                });
+            } catch (err) {
+                str_emailwarn           = `Email not sent: ${String(err?.message ?? err)}`;
+            } //endtry email
+        } else {
+            str_emailwarn               = "SMTP_HOST/SMTP_USER/SMTP_PASS not set; DB saved but email was not sent.";
+        } //endif credentials
+        return {
+            ok                          : true,
+            insertedId                  : String(dic_ins.insertedId),
+            boo_emailsent               : !!(dic_mail_result?.boo_emailsent),
+            str_emailwarn               : str_emailwarn?? dic_mail_result?.str_emailwarn,
+        };
+    } catch (err) {
+        throw new Error(`funbck_registerrequest: ${err.message}`);
+    } //endtry
+} //endfun funbck_registerrequest
+export async function funbck_sendmail(dic_in) {
+    debugger;
+    function clean(str_value) {
+        return String(str_value ?? "").trim();
+    } //endfun clean
+    try {
+        const str_subject               = clean(dic_in.subject);
+        const str_text                  = clean(dic_in.text);
+        const str_reply_to              = clean(dic_in.replyTo);
+        const str_from_name             = clean(dic_in.fromName || "LCDD Register");
+        const str_email_host            = clean(process.env.SMTP_HOST);
+        const int_email_port            = Number(process.env.SMTP_PORT ?? 587);
+        const boo_email_secure          = process.env.SMTP_SECURE === "true";
+        const str_email_user            = clean(process.env.SMTP_USER);
+        const str_email_pass            = clean(process.env.SMTP_PASS);
+        const str_email_from            = clean(process.env.MAIL_FROM || str_email_user);
+        const str_email_to              = clean(process.env.MAIL_TO || str_email_user);
+        if (!str_email_host || !str_email_user || !str_email_pass) {
+            return {
+                ok                      : false,
+                boo_emailsent           : false,
+                str_emailwarn           : "SMTP_HOST/SMTP_USER/SMTP_PASS not set.",
+            };
+        } //endif smtp env
+        if (!str_subject || !str_text) {
+            throw new Error("Missing subject or text.");
+        } //endif required mail fields
+        const obj_transporter           = nodemailer.createTransport({
+            host                        : str_email_host,
+            port                        : int_email_port,
+            secure                      : boo_email_secure,
+            auth                        : {
+                user                    : str_email_user,
+                pass                    : str_email_pass,
+            },
+        });
+        await obj_transporter.verify();
+        await obj_transporter.sendMail({
+            from                        : `"${str_from_name}" <${str_email_from}>`,
+            to                          : str_email_to,
+            replyTo                     : str_reply_to || undefined,
+            subject                     : str_subject,
+            text                        : str_text,
+        });
+        return {
+            ok                          : true,
+            boo_emailsent               : true,
+            str_emailwarn               : null,
+        };
+    } catch (err) {
+        throw new Error(`funbck_sendmail: ${err.message}`);
+    } //endtry
+} //endfun funbck_sendmail
+export async function funbck_sendtocontact(dic_in, request) {
+    debugger;
+    function clean(str_value) {
+        return String(str_value ?? "").trim();
+    } //endfun clean
+    try {
+        const str_field                 = clean(dic_in.field);
+        const str_tag                   = clean(dic_in.tag);
+        const str_observations          = clean(dic_in.observations);
+        if (!str_field || !str_tag || !str_observations) {
+            throw new Error("funbck_sendtocontact: Missing required fields.");
+        } //endif required
+        const str_user_agent            = request?.headers?.get("user-agent") ?? null;
+        const str_ip                    = (request?.headers?.get("x-forwarded-for") ?? "").split(",")[0].trim() || null;
+        const str_text                  =
+            `New contact message:\n\n`                                  +
+            `Field: ${str_field}\n`                                     +
+            `Priority tag: ${str_tag}\n`                                +
+            `Observations: ${str_observations}\n\n`                     +
+            `Meta:\n`                                                   +
+            `User-Agent: ${str_user_agent || "(empty)"}\n`              +
+            `IP: ${str_ip || "(empty)"}\n`;
+        const dic_mail_result           = await funbck_sendmail({
+            subject                     : `LCDD Contact: ${str_field} / ${str_tag}`,
+            text                        : str_text,
+            replyTo                     : "",
+            fromName                    : "LCDD Contact",
+        });
+        return {
+            ok                          : true,
+            boo_emailsent               : !!(dic_mail_result?.boo_emailsent),
+            str_emailwarn               : dic_mail_result?.str_emailwarn ?? null,
+        };
+    } catch (err) {
+        throw new Error(`funbck_sendtocontact: ${err.message}`);
+    } //endtry
+} //endfun funbck_sendtocontact
+
+# ===== utils\back\mongo.server.js =====
+import { MongoClient }                 from "mongodb";
+import { fun2_env }                    from "./mod_auxi.js"
+let clientPromise;
+if (process.env.NODE_ENV === undefined) { // stdalone (chk)
+  const uri                         = await fun2_env("MONGODB_URI");
+  if (!uri) throw new Error("Missing MONGODB_URI in .env.local");
+  const client     = new MongoClient(uri);
+  clientPromise    = client.connect();
+} else { // in API
+  const uri = process.env.MONGODB_URI;
+  if (!uri) throw new Error("Missing MONGODB_URI in .env.local");
+  let client;
+  if (process.env.NODE_ENV === "development") { // dev
+    if (!global._mongoClientPromise) {
+      client = new MongoClient(uri);
+      global._mongoClientPromise = client.connect();
+    }
+    clientPromise = global._mongoClientPromise;
+  } else { // prod
+    client        = new MongoClient(uri);
+    clientPromise = client.connect();
+  }//endif dev
+} //endif testing
+export default clientPromise;
+
+# ===== utils\front\mod_fro.js =====
+export function funfro_parse_program_markdown(str_md_in = "") {
+    function clean(str_value) {
+        return String(str_value ?? "").replace(/\r/g, "").trim();
+    } //endfun clean
+    function fun_norm_dash(str_value) {
+        return String(str_value ?? "").replace(/[–—]/g, "-");
+    } //endfun fun_norm_dash
+    function fun_is_hr(str_line) {
+        return /^\s*---+\s*$/.test(str_line);
+    } //endfun fun_is_hr
+    function fun_is_h3_program(str_line) {
+        return /^\s*#{3}\s+Programa\s*$/i.test(str_line);
+    } //endfun fun_is_h3_program
+    function fun_is_h3_structure(str_line) {
+        return /^\s*#{3}\s+Estructura\s*$/i.test(str_line);
+    } //endfun fun_is_h3_structure
+    function fun_is_h4_block(str_line) {
+        return /^\s*#{4}\s+/.test(str_line);
+    } //endfun fun_is_h4_block
+    function fun_parse_block_title(str_line) {
+        return clean(str_line.replace(/^\s*#{4}\s+/, ""));
+    } //endfun fun_parse_block_title
+    function fun_parse_session_header(str_line) {
+        const str_line_clean          = clean(str_line);
+        if (!str_line_clean.startsWith("**")) {
+            return null;
+        } //endif
+        const mat_header              = str_line_clean.match(/^\*\*(.+?)\*\*(.*)$/);
+        if (!mat_header) {
+            return null;
+        } //endif
+        const str_bold_inner          = clean(mat_header[1]);
+        const str_after_bold          = clean(mat_header[2]);
+        const mat_main                = str_bold_inner.match(/^([0-9]{2}:[0-9]{2}\s*[-–—]\s*[0-9]{2}:[0-9]{2})\s*·\s*(.+)$/);
+        if (!mat_main) {
+            return null;
+        } //endif
+        const str_time_raw            = clean(mat_main[1]);
+        const str_title_raw           = clean(mat_main[2]);
+        let str_title                 = str_title_raw;
+        let str_inline_note           = "";
+        if (str_after_bold) {
+            str_inline_note           = str_after_bold.replace(/^\./, "").trim();
+        } //endif
+        return {
+            str_time                  : fun_norm_dash(str_time_raw),
+            str_title,
+            str_inline_note,
+        };
+    } //endfun fun_parse_session_header
+    const lis_lines                   = String(str_md_in ?? "").replace(/\r/g, "").split("\n");
+    let boo_in_program                = false;
+    let boo_in_structure              = false;
+    let str_timezone_note             = "";
+    let str_structure_md              = "";
+    const lis_blocks                  = [];
+    let dic_block_current             = null;
+    let dic_item_current              = null;
+    function fun_push_item_current() {
+        if (!dic_item_current) {
+            return;
+        } //endif
+        dic_item_current.description  = clean(dic_item_current.description);
+        if (!dic_item_current.str_type) {
+            dic_item_current.str_type = /^minicoloquio/i.test(dic_item_current.title)
+                ? "discussion"
+                : /^coloquio/i.test(dic_item_current.title)
+                    ? "closing"
+                    : /^inauguraci[oó]n/i.test(dic_item_current.title)
+                        ? "opening"
+                        : "talk";
+        } //endif
+        if (!dic_block_current) {
+            dic_block_current         = {
+                title                 : "Programa",
+                lis_items             : [],
+            };
+            lis_blocks.push(dic_block_current);
+        } //endif
+        dic_block_current.lis_items.push(dic_item_current);
+        dic_item_current             = null;
+    } //endfun fun_push_item_current
+    function fun_push_block_current() {
+        fun_push_item_current();
+        if (!dic_block_current) {
+            return;
+        } //endif
+        if (!Array.isArray(dic_block_current.lis_items)) {
+            dic_block_current.lis_items = [];
+        } //endif
+        dic_block_current            = null;
+    } //endfun fun_push_block_current
+    for (const str_line_raw of lis_lines) {
+        const str_line               = str_line_raw.replace(/\s+$/, "");
+        const str_line_trim          = clean(str_line);
+        if (!boo_in_program && !boo_in_structure) {
+            if (fun_is_h3_program(str_line_trim)) {
+                boo_in_program       = true;
+                continue;
+            } //endif
+            if (str_line_trim) {
+                str_timezone_note    += (str_timezone_note ? "\n" : "") + str_line_trim;
+            } //endif
+            continue;
+        } //endif pre-program
+        if (boo_in_program) {
+            if (fun_is_h3_structure(str_line_trim)) {
+                fun_push_block_current();
+                boo_in_program       = false;
+                boo_in_structure     = true;
+                continue;
+            } //endif
+            if (!str_line_trim) {
+                if (dic_item_current?.description) {
+                    dic_item_current.description += "\n";
+                } //endif
+                continue;
+            } //endif blank
+            if (fun_is_hr(str_line_trim)) {
+                continue;
+            } //endif hr
+            if (fun_is_h4_block(str_line_trim)) {
+                fun_push_block_current();
+                dic_block_current    = {
+                    title            : fun_parse_block_title(str_line_trim),
+                    lis_items        : [],
+                };
+                lis_blocks.push(dic_block_current);
+                continue;
+            } //endif block
+            const dic_header         = fun_parse_session_header(str_line_trim);
+            if (dic_header) {
+                fun_push_item_current();
+                dic_item_current     = {
+                    time             : dic_header.str_time,
+                    title            : dic_header.str_title,
+                    description      : dic_header.str_inline_note || "",
+                    str_type         : null,
+                };
+                continue;
+            } //endif session header
+            if (!dic_item_current) {
+                if (dic_block_current) {
+                    dic_block_current.subtitle =
+                        clean(
+                            [dic_block_current.subtitle, str_line_trim].filter(Boolean).join("\n")
+                        );
+                } //endif
+                continue;
+            } //endif loose line inside block
+            dic_item_current.description =
+                clean(
+                    [dic_item_current.description, str_line_trim].filter(Boolean).join("\n")
+                );
+        } //endif boo_in_program
+        else if (boo_in_structure) {
+            if (str_line_trim) {
+                str_structure_md     += (str_structure_md ? "\n" : "") + str_line_trim;
+            } //endif
+        } //endif boo_in_structure
+    } //endfor
+    fun_push_block_current();
+    return {
+        timezone_note                : clean(str_timezone_note),
+        lis_blocks,
+        structure_md                 : clean(str_structure_md),
+    };
+} //endfun funfro_parse_program_markdown
+
+# ===== utils\front\mod_front.js =====
+const SET_SKIP = new Set(["str_api", "form", "dic", "str_fun", "u_logged", "dic_wal"]);
+function fun2_payload2form(form, dic_payload) {
+    const isFileLike = (x) =>
+        (typeof File !== "undefined" && x instanceof File) ||
+        (typeof Blob !== "undefined" && x instanceof Blob);
+    const fun3_replacer = (_k, v) => (typeof v === "bigint" ? v.toString() : v);
+    for (const [str_key, var_value] of Object.entries(dic_payload || {})) {
+        if (var_value === undefined || var_value === null) {
+            continue;
+        } //endif
+        if (isFileLike(var_value)) {
+            form.set(str_key, var_value);
+            continue;
+        } //endif
+        if (typeof var_value === "bigint") {
+            form.set(str_key, var_value.toString());
+            continue;
+        } //endif
+        if (Array.isArray(var_value) || (typeof var_value === "object" && !(var_value instanceof Date))) {
+            form.set(str_key, JSON.stringify(var_value, fun3_replacer));
+            continue;
+        } //endif
+        if (var_value instanceof Date) {
+            form.set(str_key, var_value.toISOString());
+            continue;
+        } //endif
+        form.set(str_key, String(var_value));
+    } //endfor
+    return form;
+} //endfun fun2_payload2form
+export function fun2_diggest_in(dic_in) {
+    const str_fun                       = dic_in?.str_fun;
+    if (!str_fun) {
+        throw new Error("fun2_diggest_in: missing str_fun");
+    } //endif
+    const boo_has_dic                   = !!(dic_in?.dic && typeof dic_in.dic === "object");
+    const boo_has_form                  = !!(dic_in?.form instanceof FormData);
+    if (!boo_has_dic && !boo_has_form) {
+        debugger;
+        throw new Error("fun2_diggest_in: missing dic or form");
+    } //endif no input
+    let dic_payload                     = {};
+    let dic_meta                        = {};
+    let form                            = boo_has_form ? dic_in.form : new FormData();
+    if (boo_has_dic) {
+        dic_payload                     = Object.fromEntries(
+            Object.entries(dic_in.dic).filter(([str_key]) => !SET_SKIP.has(str_key))
+        );
+        const { u_logged, dic_wal }     = dic_in.dic;
+        dic_meta                        = { u_logged, dic_wal, str_fun };
+        fun2_payload2form(form, dic_payload);
+    } else {
+        dic_payload                     = Object.fromEntries(form.entries());
+        dic_meta                        = { str_fun };
+    } //endif source kind
+    form.set("str_fun", String(str_fun));
+    return { dic_meta, form, dic_payload };
+} //endfun fun2_diggest_in
+export async function fun_fetch(dic_in) {
+  const { form }                                = fun2_diggest_in(dic_in);
+  const str_api                                 = String(dic_in?.str_api || "").trim();
+  const resp_http                               = await fetch(str_api, { method:"POST", body:form });
+  const str_ct                                  = resp_http.headers.get("content-type") || "";
+  let dic_out;
+  if (str_ct.includes("application/json")) {
+    dic_out                                     = await resp_http.json();
+  } else {
+    const str_txt                               = await resp_http.text();
+    try { dic_out = JSON.parse(str_txt); }
+    catch { dic_out = { ok:false, err:str_txt }; }
+  }
+  if (!resp_http.ok || dic_out?.ok === false) {
+    debugger; // fun_fetch mod_frontend
+    const str_err = String(dic_out?.err || dic_out?.message || `HTTP ${resp_http.status}`);
+    throw new Error(str_err);
+  }
+  return dic_out;
+}//endfun fun_fetch
