@@ -362,16 +362,12 @@ export async function funbck_getdetailspeakers(dic_in) { // {lis_speakernames,  
 
     // modifications por bugs de next/vercel cache image. forzamos a que coja celia_piquer3.jpg en vez de celia_piquer (contaminado por cache de vercel)
     if (key_speaker.includes("celia_piquer")) {
-      debugger; // funbck_getdetailspeakers
       dc2_out.celia_piquer.url =  dc2_out.celia_piquer?.url?.replace("celia_piquer.jpg", "celia_piquer3.jpg") ?? null;
-    }
-
+    }//endif
 
   }//endfor speaker_i
 
 
-
-  debugger;
 
   return dc2_out;
 
@@ -585,8 +581,6 @@ export async function funbck_test(dic_in, request) {
 
 export async function funbck_registerrequest(dic_in, request) {
 
-    debugger;
-
     function clean(str_value) {
         return String(str_value ?? "").trim();
     } //endfun clean
@@ -704,7 +698,7 @@ export async function funbck_registerrequest(dic_in, request) {
 
 
 export async function funbck_sendmail(dic_in) {
-    debugger;
+
     function clean(str_value) {
         return String(str_value ?? "").trim();
     } //endfun clean
@@ -772,7 +766,6 @@ export async function funbck_sendmail(dic_in) {
 
 
 export async function funbck_sendtocontact(dic_in, request) {
-    debugger;
 
     function clean(str_value) {
         return String(str_value ?? "").trim();

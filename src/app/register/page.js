@@ -126,8 +126,13 @@ export default function RegisterPage() {
                     {/* Disclaimer */}
                     <div className="mt-6 rounded-xl border border-white/10 bg-black/40 px-5 py-4 text-sm text-zinc-300">
                         <p className="italic">
-                            ⚠️ Registering does not grant the right to be accepted. It only submits a request for admission.
-                            If accepted, you will receive an acceptance notification to your email address.
+                        ⚠️ If you simply want to attend the conference as audience, registration is NOT required
+                        (a blue button for that purpose will appear on the home page).
+
+                        This registration is ONLY for requesting to be a panelist in the 2027 edition.
+
+                        Registering does not guarantee acceptance to be a panelist. It only submits a request for consideration.
+                        If your request is accepted, you will receive a notification at your email address.
                         </p>
                     </div>
 
