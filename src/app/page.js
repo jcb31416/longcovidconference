@@ -23,7 +23,7 @@ const str_cn_btn_wide                 = str_cn_btn + " w-full max-w-[160px]";
 
 const arr_ticker_items                = [
     { type:"label", text:"organized by:" },
-    { type:"logo",  src:"/logos/logo_org_regeneratics.svg", alt:"Regeneratics", title:"Regeneratics", str_cn:"h-5" },
+    { type:"logo",  src:"/logos/logo_org_regeneratics.svg", alt:"Regeneratics", title:"regeneratics", str_cn:"h-5" },
 
     { type:"sep" },
 
@@ -32,7 +32,8 @@ const arr_ticker_items                = [
     { type:"logo",  src:"/logos/logo_apo_reicop.svg",   alt:"REiCOP",    title:"Red Española de Investigación en COVID Persistente" },
     { type:"logo",  src:"/logos/logo_apo_amacop.svg",   alt:"AMACOP",    title:"AMACOP" },
     { type:"logo",  src:"/logos/logo_apo_lceuskal.jpg", alt:"LC Euskal", title:"Long COVID Euskal Herria" },
-    { type:"logo",  src:"/logos/logo_movili.png", alt:"Movili", title:"Movilización Persistente" },
+    { type:"logo",  src:"/logos/logo_movili.png",       alt:"Movili",    title:"Movilización Persistente" },
+    { type:"logo",  src:"/logos/logo_renegade.png",     alt:"Renegade",  title:"Renegade Research", str_cn:"h-5" },
 
     { type:"sep" },
 ];
@@ -171,6 +172,7 @@ function TickerRow() {
     return (
         <div className="flex w-max shrink-0 items-center gap-8 pr-8">
             {arr_ticker_items.map((itm, idx) => {
+
                 if (itm.type === "label") {
                     return (
                         <span
@@ -487,33 +489,55 @@ export default function Home() {
                 >
                     {/* Panel 1 */}
                     <motion.div
-                        variants={{
-                            hidden      : { opacity:0, y:18 },
-                            show        : { opacity:1, y:0 },
-                        }}
+                         variants={{
+                             hidden      : { opacity:0, y:18 },
+                             show        : { opacity:1, y:0 },
+                         }}
                     >
-                        <GlassPanel str_tint="purple" className="px-8 py-7">
-                            <div className="grid grid-cols-2 place-items-center gap-x-8 gap-y-4">
+                         <GlassPanel str_tint="purple" className="px-8 py-7">
+                             <div className="grid grid-cols-1 gap-4 md:grid-cols-3 md:gap-6">
 
-                                <Link className={str_cn_btn_wide} href="/conference#program">
-                                    Program
-                                </Link>
+                                 {/* Left column */}
+                                 <div className="flex flex-col items-center gap-4">
+                                     <Link className={str_cn_btn_wide} href="/conference#program">
+                                         Program
+                                     </Link>
 
-                                <button className={str_cn_btn_wide} type="button" onClick={fun_copy_home}>
-                                    {boo_copied ? "Copied!" : "Link to share"}
-                                </button>
+                                     <Link className={str_cn_btn_wide} href="/conference#panelists">
+                                         Panelists
+                                     </Link>
+                                 </div>
+                                 {/* End Left column */}
 
-                                <Link className={str_cn_btn_wide} href="/conference#panelists">
-                                    Panelists
-                                </Link>
+                                 {/* Center column */}
+                                 <div className="flex flex-col items-center gap-4">
+                                     <Link className={str_cn_btn_wide} href="/preview">
+                                         Preview
+                                     </Link>
 
-                                <a className={str_cn_btn_wide} href={str_pdf_path} download>
-                                    PDF
-                                </a>
-                            </div>
-                        </GlassPanel>
+                                     <Link className={str_cn_btn_wide} href="/organizations">
+                                         Organizations
+                                     </Link>
+                                 </div>
+                                 {/* End Center column */}
+
+                                 {/* Right column */}
+                                 <div className="flex flex-col items-center gap-4">
+                                     <button className={str_cn_btn_wide} type="button" onClick={fun_copy_home}>
+                                         {boo_copied ? "Copied!" : "Link to share"}
+                                     </button>
+
+                                     <a className={str_cn_btn_wide} href={str_pdf_path} download>
+                                         PDF
+                                     </a>
+                                 </div>
+                                 {/* End Right column */}
+
+                             </div>
+                         </GlassPanel>
                     </motion.div>
                     {/* End Panel 1 */}
+
 
                     {/* Panel 2 */}
                     <motion.div
