@@ -329,7 +329,6 @@ export async function funbck_getdetailspeakers(dic_in) { // {lis_speakernames,  
                                               ); //end findOne
 
   dc2_speakers                                = dic_doc?.dc2_speakers ?? {};  // antes se cargaba de: `await fun2_setcache("dc2_speakers", dc2_speakers);`, pero se quitó xq entonces no se actualizaba cn nuevos datos en la nube
-  debugger; // funbck_getdetailspeakers
 
   // info: dc2_speakers tiene esta estructura,
   // export const dc2_speakers = {
@@ -360,7 +359,17 @@ export async function funbck_getdetailspeakers(dic_in) { // {lis_speakernames,  
       url:                                      dic_speaker.dic_imgmeta?.url ?? null,
       uri_vercel:                               dic_speaker.dic_imgmeta?.uri_vercel ?? null
     }; //enddic dc2_out
+
+    // modifications por bugs de next/vercel cache image. forzamos a que coja celia_piquer3.jpg en vez de celia_piquer (contaminado por cache de vercel)
+    if (key_speaker.includes("celia_piquer")) {
+      debugger; // funbck_getdetailspeakers
+      dc2_out.celia_piquer.url =  dc2_out.celia_piquer?.url?.replace("celia_piquer.jpg", "celia_piquer3.jpg") ?? null;
+    }
+
+
   }//endfor speaker_i
+
+
 
   debugger;
 
