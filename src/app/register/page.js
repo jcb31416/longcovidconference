@@ -116,7 +116,7 @@ export default function RegisterPage() {
             <div className="relative mx-auto flex min-h-screen max-w-5xl items-center justify-center px-6 py-16 text-zinc-100">
                 <GlassPanel str_tint="purple" className="w-full max-w-3xl px-8 py-8">
                     <h1 className="text-3xl font-semibold">
-                        Register
+                        Application to Become an LCDD Panelist
                     </h1>
 
                     <p className="mt-1 text-sm text-zinc-400">

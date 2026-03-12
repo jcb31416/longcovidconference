@@ -387,14 +387,14 @@ export default function Home() {
                 {/* End Hero */}
 
                 {/* Countdown */}
-                <motion.div
-                    initial={{ opacity:0, y:8 }}
-                    animate={{ opacity:1, y:0 }}
-                    transition={{ duration:0.7, delay:0.18 }}
-                    className="mb-8"
-                >
-                    {dic_countdown ? (
-                        dic_countdown.boo_started ? (
+                {dic_countdown ? (
+                    <motion.div
+                        initial={{ opacity:0, y:8 }}
+                        animate={{ opacity:1, y:0 }}
+                        transition={{ duration:0.7, delay:0.18 }}
+                        className="mb-8"
+                    >
+                        {dic_countdown.boo_started ? (
                             <div className="rounded-2xl border border-white/10 bg-white/[0.04] px-6 py-3 text-sm font-semibold uppercase tracking-[0.18em] text-zinc-300">
                                 Conference started
                             </div>
@@ -427,6 +427,7 @@ export default function Home() {
                                     </div>
                                 </div>
 
+                                {/* segundero solo display en desktop */}
                                 <div className="hidden sm:block min-w-[84px] rounded-2xl border border-white/10 bg-white/[0.04] px-4 py-3">
                                     <div className="text-2xl font-bold text-zinc-100">
                                         {String(dic_countdown.int_seconds).padStart(2, "0")}
@@ -435,40 +436,11 @@ export default function Home() {
                                         Seconds
                                     </div>
                                 </div>
-                            </div>
-                        )
-                    ) : (
-                        <div className="flex flex-wrap items-center justify-center gap-3">
-                            <div className="min-w-[84px] rounded-2xl border border-white/10 bg-white/[0.04] px-4 py-3">
-                                <div className="text-2xl font-bold text-zinc-500">--</div>
-                                <div className="text-[10px] uppercase tracking-[0.24em] text-zinc-600">
-                                    Days
-                                </div>
-                            </div>
 
-                            <div className="min-w-[84px] rounded-2xl border border-white/10 bg-white/[0.04] px-4 py-3">
-                                <div className="text-2xl font-bold text-zinc-500">--</div>
-                                <div className="text-[10px] uppercase tracking-[0.24em] text-zinc-600">
-                                    Hours
-                                </div>
                             </div>
-
-                            <div className="min-w-[84px] rounded-2xl border border-white/10 bg-white/[0.04] px-4 py-3">
-                                <div className="text-2xl font-bold text-zinc-500">--</div>
-                                <div className="text-[10px] uppercase tracking-[0.24em] text-zinc-600">
-                                    Minutes
-                                </div>
-                            </div>
-
-                            <div className="hidden sm:block min-w-[84px] rounded-2xl border border-white/10 bg-white/[0.04] px-4 py-3">
-                                <div className="text-2xl font-bold text-zinc-500">--</div>
-                                <div className="text-[10px] uppercase tracking-[0.24em] text-zinc-600">
-                                    Seconds
-                                </div>
-                            </div>
-                        </div>
-                    )}
-                </motion.div>
+                        )}
+                    </motion.div>
+                ) : null}
                 {/* End Countdown */}
 
                 {/* Rotulo 2 lineas */}
