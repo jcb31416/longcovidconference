@@ -508,6 +508,52 @@ export default function Home() {
                 </motion.div>
                 {/* End ticker institucional */}
 
+
+
+                {/* Live access panel */}
+                <motion.div
+                    initial={{ opacity:0, y:8 }}
+                    animate={{ opacity:1, y:0 }}
+                    transition={{ duration:0.7, delay:0.52 }}
+                    className="mb-10 w-full max-w-3xl"
+                >
+                    <GlassPanel str_tint="purple" className="px-8 py-7">
+                        <div className="flex flex-col items-center gap-5 text-center">
+                            <div className="min-h-[2.5rem] max-w-3xl text-center text-[12px] leading-5 text-zinc-200 sm:min-h-0 sm:text-sm">
+                                Pulse el botón azul para acceder al congreso en directo celebrado en Zoom.
+                                En caso de aforo completo, pulse el botón rojo para ver la retransmisión en Youtube (20 segundos en diferido)
+                                <div className="min-h-[2.5rem] text-center text-[11px] italic leading-5 text-zinc-300 sm:min-h-0 sm:text-xs sm:text-zinc-400 mt-4">
+                                    If you would like to follow the conference with subtitles in your language, please use the YouTube stream (20 secs delay)
+                                </div>
+                            </div>
+
+                            <div className="flex flex-col items-center gap-4 sm:flex-row sm:justify-center">
+                                <a
+                                    href="https://zoom.us/j/98765432101?pwd=lcdd2026_preview_access"
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="inline-flex min-w-[160px] items-center justify-center rounded-xl border border-blue-400/30 bg-blue-500/20 px-6 py-2 text-sm font-semibold text-blue-100 transition hover:bg-blue-500/30 active:scale-[0.99] focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-300/40"
+                                >
+                                    Zoom
+                                </a>
+
+                                <a
+                                    href="https://www.youtube.com/watch?v=lcdd2026_live_placeholder"
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="inline-flex min-w-[160px] items-center justify-center gap-2 rounded-xl border border-red-400/30 bg-red-500/20 px-6 py-2 text-sm font-semibold text-red-100 transition hover:bg-red-500/30 active:scale-[0.99] focus:outline-none focus-visible:ring-2 focus-visible:ring-red-300/40"
+                                >
+                                    <span aria-hidden="true">▶</span>
+                                    <span>Youtube</span>
+                                </a>
+                            </div>
+                        </div>
+                    </GlassPanel>
+                </motion.div>
+                {/* End Live access panel */}
+
+
+
                 {/* Panels */}
                 <motion.div
                     className="w-full max-w-3xl space-y-6"
