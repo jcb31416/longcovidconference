@@ -35,12 +35,13 @@ const arr_ticker_items                = [
     { type:"sep" },
 
     { type:"label", text:"supported by:" },
-    { type:"logo",  src:"/logos/logo_apo_semg.jpg",     alt:"SEMG",      title:"Sociedad Española de Médicos Generales y de Familia" },
-    { type:"logo",  src:"/logos/logo_apo_reicop.svg",   alt:"REiCOP",    title:"Red Española de Investigación en COVID Persistente" },
-    { type:"logo",  src:"/logos/logo_apo_amacop.svg",   alt:"AMACOP",    title:"AMACOP" },
-    { type:"logo",  src:"/logos/logo_apo_lceuskal.jpg", alt:"LC Euskal", title:"Long COVID Euskal Herria" },
-    { type:"logo",  src:"/logos/logo_movili.png",       alt:"Movili",    title:"Movilización Persistente" },
-    { type:"logo",  src:"/logos/logo_renegade.png",     alt:"Renegade",  title:"Renegade Research", str_cn:"h-5" },
+    { type:"logo",  src:"/logos/logo_apo_semg.jpg",     alt:"SEMG",       title:"Sociedad Española de Médicos Generales y de Familia" },
+    { type:"logo",  src:"/logos/logo_apo_reicop.svg",   alt:"REiCOP",     title:"Red Española de Investigación en COVID Persistente" },
+    { type:"logo",  src:"/logos/logo_apo_amacop.svg",   alt:"AMACOP",     title:"AMACOP" },
+    { type:"logo",  src:"/logos/logo_apo_lceuskal.jpg", alt:"LC Euskal",  title:"Long COVID Euskal Herria" },
+    { type:"logo",  src:"/logos/logo_movili.png",       alt:"Movili",     title:"Movilización Persistente" },
+    { type:"logo",  src:"/logos/logo_renegade.png",     alt:"Renegade",   title:"Renegade Research", str_cn:"h-5" },
+    { type:"logo",  src:"/logos/logo_ateava.png",       alt:"Ateava",     title:"ATEAVA", str_cn:"h-5" },
 
     { type:"sep" },
 ];
@@ -529,7 +530,7 @@ export default function Home() {
 
                             <div className="flex flex-col items-center gap-4 sm:flex-row sm:justify-center">
                                 <a
-                                    href="https://zoom.us/j/98765432101?pwd=lcdd2026_preview_access"
+                                    href="https://zoom.us/j/95575880572?pwd=plpVyWFVrvw86EnFbBKdkJEtgNLMmy.1"
                                     target="_blank"
                                     rel="noopener noreferrer"
                                     className="inline-flex min-w-[160px] items-center justify-center rounded-xl border border-blue-400/30 bg-blue-500/20 px-6 py-2 text-sm font-semibold text-blue-100 transition hover:bg-blue-500/30 active:scale-[0.99] focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-300/40"
@@ -538,7 +539,7 @@ export default function Home() {
                                 </a>
 
                                 <a
-                                    href="https://www.youtube.com/watch?v=lcdd2026_live_placeholder"
+                                    href="rtmp://a.rtmp.youtube.com/live2"
                                     target="_blank"
                                     rel="noopener noreferrer"
                                     className="inline-flex min-w-[160px] items-center justify-center gap-2 rounded-xl border border-red-400/30 bg-red-500/20 px-6 py-2 text-sm font-semibold text-red-100 transition hover:bg-red-500/30 active:scale-[0.99] focus:outline-none focus-visible:ring-2 focus-visible:ring-red-300/40"
@@ -551,6 +552,9 @@ export default function Home() {
                     </GlassPanel>
                 </motion.div>
                 {/* End Live access panel */}
+
+
+
 
 
 
