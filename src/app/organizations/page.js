@@ -59,6 +59,13 @@ const lis_orgs_affiliated               = [
         str_logo_alt                    : "Long COVID Euskal Herria logo",
     },
     {
+        str_name                        : "ATEAVA",
+        str_desc                        : "Spanish non-profit association representing essential workers affected after administration of the AstraZeneca COVID-19 vaccine. Created to provide support, visibility, and advocacy, the organization highlights the medical, occupational, and social impact of long-term adverse outcomes, and calls for better recognition, research, and care for those affected.",
+        str_url                         : "https://ateava.es/",
+        str_logo                        : "/logos/logo_ateava.png",
+        str_logo_alt                    : "ATEAVA logo",
+    },
+    {
         str_name                        : "Movilización Persistente",
         str_desc                        : "Statewide civic platform of people affected by persistent illness, promoting recognition, patients’ rights, and better access to healthcare and social support. Its work emphasizes public visibility, collective advocacy, and institutional awareness around Long COVID and related chronic debilitating conditions.",
         str_url                         : "https://movilizacionpersistente.org/",
@@ -71,13 +78,6 @@ const lis_orgs_affiliated               = [
         str_url                         : "https://www.renegade-research.org/",
         str_logo                        : "/logos/logo_renegade.png",
         str_logo_alt                    : "Renegade Research logo",
-    },
-    {
-        str_name                        : "ATEAVA",
-        str_desc                        : "Spanish non-profit association representing essential workers affected after administration of the AstraZeneca COVID-19 vaccine. Created to provide support, visibility, and advocacy, the organization highlights the medical, occupational, and social impact of long-term adverse outcomes, and calls for better recognition, research, and care for those affected.",
-        str_url                         : "https://ateava.es/",
-        str_logo                        : "/logos/logo_ateava.png",
-        str_logo_alt                    : "ATEAVA logo",
     },
 
 ]; //endlis lis_orgs_affiliated
