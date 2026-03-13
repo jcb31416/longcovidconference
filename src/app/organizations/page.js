@@ -83,11 +83,6 @@ const lis_orgs_affiliated               = [
 ]; //endlis lis_orgs_affiliated
 
 
-ATEAVA is a Spanish non-profit association representing essential workers affected after administration of the AstraZeneca COVID-19 vaccine. Created to provide support, visibility, and advocacy, the organization highlights the medical, occupational, and social impact of long-term adverse outcomes, and calls for better recognition, research, and care for those affected.
-
-
-
-
 function OrgCard({ dic_org }) {
     return (
         <div className={str_cn_subpanel}>
