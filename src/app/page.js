@@ -511,154 +511,138 @@ export default function Home() {
 
 
 
-                {/* Live access panel */}
+                {/* Unified conference panel */}
                 <motion.div
                     initial={{ opacity:0, y:8 }}
                     animate={{ opacity:1, y:0 }}
                     transition={{ duration:0.7, delay:0.52 }}
-                    className="mb-10 w-full max-w-3xl"
+                    className="mb-10 w-full max-w-4xl"
                 >
                     <GlassPanel str_tint="purple" className="px-8 py-7">
-                        <div className="flex flex-col items-center gap-5 text-center">
-                            <div className="min-h-[2.5rem] max-w-3xl text-center text-[12px] leading-5 text-zinc-200 sm:min-h-0 sm:text-sm">
-                                Pulse el botón azul para acceder al congreso en directo celebrado en Zoom.
-                                En caso de aforo completo, pulse el botón rojo para ver la retransmisión en Youtube (20 segundos en diferido)
-                                <div className="min-h-[2.5rem] text-center text-[11px] italic leading-5 text-zinc-300 sm:min-h-0 sm:text-xs sm:text-zinc-400 mt-4">
-                                    If you would like to follow the conference with subtitles in your language, please use the YouTube stream (20 secs delay)
+                        <div className="flex flex-col gap-10">
+                            {/* section: access */}
+                            <section className="flex flex-col items-center gap-5 text-center">
+                                <h3 className="text-xs font-semibold uppercase tracking-[0.22em] text-zinc-400">
+                                    Acceso / Access
+                                </h3>
+
+                                <div className="min-h-[2.5rem] max-w-3xl text-center text-[12px] leading-5 text-zinc-200 sm:min-h-0 sm:text-sm">
+                                    Pulse el botón azul para acceder al congreso en directo celebrado en Zoom.
+                                    En caso de aforo completo, pulse el botón rojo para ver la retransmisión en Youtube (20 segundos en diferido)
+
+                                    <div className="mt-4 min-h-[2.5rem] text-center text-[11px] italic leading-5 text-zinc-300 sm:min-h-0 sm:text-xs sm:text-zinc-400">
+                                        If you would like to follow the conference with subtitles in your language, please use the YouTube stream (20 secs delay)
+                                    </div>
                                 </div>
-                            </div>
 
-                            <div className="flex flex-col items-center gap-4 sm:flex-row sm:justify-center">
-                                <a
-                                    href="https://zoom.us/j/95575880572?pwd=plpVyWFVrvw86EnFbBKdkJEtgNLMmy.1"
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="inline-flex min-w-[160px] items-center justify-center rounded-xl border border-blue-400/30 bg-blue-500/20 px-6 py-2 text-sm font-semibold text-blue-100 transition hover:bg-blue-500/30 active:scale-[0.99] focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-300/40"
-                                >
-                                    Zoom
-                                </a>
+                                <div className="flex flex-col items-center gap-4 sm:flex-row sm:justify-center">
+                                    <a
+                                        href="https://zoom.us/j/95575880572?pwd=plpVyWFVrvw86EnFbBKdkJEtgNLMmy.1"
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="inline-flex min-w-[160px] items-center justify-center rounded-xl border border-blue-400/30 bg-blue-500/20 px-6 py-2 text-sm font-semibold text-blue-100 transition hover:bg-blue-500/30 active:scale-[0.99] focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-300/40"
+                                    >
+                                        Zoom
+                                    </a>
 
-                                <a
-                                    href="rtmp://a.rtmp.youtube.com/live2"
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="inline-flex min-w-[160px] items-center justify-center gap-2 rounded-xl border border-red-400/30 bg-red-500/20 px-6 py-2 text-sm font-semibold text-red-100 transition hover:bg-red-500/30 active:scale-[0.99] focus:outline-none focus-visible:ring-2 focus-visible:ring-red-300/40"
-                                >
-                                    <span aria-hidden="true">▶</span>
-                                    <span>Youtube</span>
-                                </a>
-                            </div>
+                                    <a
+                                        href="rtmp://a.rtmp.youtube.com/live2"
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="inline-flex min-w-[160px] items-center justify-center gap-2 rounded-xl border border-red-400/30 bg-red-500/20 px-6 py-2 text-sm font-semibold text-red-100 transition hover:bg-red-500/30 active:scale-[0.99] focus:outline-none focus-visible:ring-2 focus-visible:ring-red-300/40"
+                                    >
+                                        <span aria-hidden="true">▶</span>
+                                        <span>Youtube</span>
+                                    </a>
+                                </div>
+                            </section>
+                            {/* end section: access */}
+
+                            <div className="h-px w-full bg-white/10" />
+
+                            {/* section: information */}
+                            <section className="flex flex-col items-center gap-5 text-center">
+                                <h3 className="text-xs font-semibold uppercase tracking-[0.22em] text-zinc-400">
+                                    Información / Information
+                                </h3>
+
+                                <div className="grid w-full grid-cols-1 gap-4 md:grid-cols-3 md:gap-6">
+                                    {/* Left column */}
+                                    <div className="flex flex-col items-center gap-4">
+                                        <Link className={str_cn_btn_wide} href="/conference#program">
+                                            Program
+                                        </Link>
+
+                                        <Link className={str_cn_btn_wide} href="/conference#panelists">
+                                            Panelists
+                                        </Link>
+                                    </div>
+                                    {/* End Left column */}
+
+                                    {/* Center column */}
+                                    <div className="flex flex-col items-center gap-4">
+                                        <Link className={str_cn_btn_wide} href="/preview">
+                                            Preview
+                                        </Link>
+
+                                        <Link className={str_cn_btn_wide} href="/organizations">
+                                            Organizations
+                                        </Link>
+                                    </div>
+                                    {/* End Center column */}
+
+                                    {/* Right column */}
+                                    <div className="flex flex-col items-center gap-4">
+                                        <button className={str_cn_btn_wide} type="button" onClick={fun_copy_home}>
+                                            {boo_copied ? "Copied!" : "Link to share"}
+                                        </button>
+
+                                        <a className={str_cn_btn_wide} href={str_pdf_path} download>
+                                            PDF
+                                        </a>
+                                    </div>
+                                    {/* End Right column */}
+                                </div>
+                            </section>
+                            {/* end section: information */}
+
+                            <div className="h-px w-full bg-white/10" />
+
+                            {/* section: forms */}
+                            <section className="flex flex-col items-center gap-5 text-center">
+                                <h3 className="text-xs font-semibold uppercase tracking-[0.22em] text-zinc-400">
+                                    Formularios / Forms
+                                </h3>
+
+                                <div className="grid w-full grid-cols-1 gap-6 md:grid-cols-2 md:gap-12">
+                                    <div className="flex flex-col items-center gap-3">
+                                        <div className="min-h-[2.5rem] text-center text-[11px] italic leading-5 text-zinc-300 sm:min-h-0 sm:text-xs sm:text-zinc-400">
+                                            Application for being a panelist in 2027
+                                        </div>
+
+                                        <Link className={str_cn_btn_wide} href="/register">
+                                            Apply
+                                        </Link>
+                                    </div>
+
+                                    <div className="flex flex-col items-center gap-3">
+                                        <div className="min-h-[2.5rem] text-center text-[11px] italic leading-5 text-zinc-300 sm:min-h-0 sm:text-xs sm:text-zinc-400">
+                                            Doubts/Support/Others?
+                                        </div>
+
+                                        <Link className={str_cn_btn_wide} href="/contact">
+                                            Contact
+                                        </Link>
+                                    </div>
+                                </div>
+                            </section>
+                            {/* end section: forms */}
                         </div>
                     </GlassPanel>
                 </motion.div>
-                {/* End Live access panel */}
+                {/* End unified conference panel */}
 
 
-
-
-
-
-                {/* Panels */}
-                <motion.div
-                    className="w-full max-w-3xl space-y-6"
-                    initial="hidden"
-                    animate="show"
-                    variants={{
-                        hidden          : {},
-                        show            : {
-                            transition  : {
-                                staggerChildren : 0.14,
-                                delayChildren   : 0.55,
-                            },
-                        },
-                    }}
-                >
-                    {/* Panel 1 */}
-                    <motion.div
-                         variants={{
-                             hidden      : { opacity:0, y:18 },
-                             show        : { opacity:1, y:0 },
-                         }}
-                    >
-                         <GlassPanel str_tint="purple" className="px-8 py-7">
-                             <div className="grid grid-cols-1 gap-4 md:grid-cols-3 md:gap-6">
-
-                                 {/* Left column */}
-                                 <div className="flex flex-col items-center gap-4">
-                                     <Link className={str_cn_btn_wide} href="/conference#program">
-                                         Program
-                                     </Link>
-
-                                     <Link className={str_cn_btn_wide} href="/conference#panelists">
-                                         Panelists
-                                     </Link>
-                                 </div>
-                                 {/* End Left column */}
-
-                                 {/* Center column */}
-                                 <div className="flex flex-col items-center gap-4">
-                                     <Link className={str_cn_btn_wide} href="/preview">
-                                         Preview
-                                     </Link>
-
-                                     <Link className={str_cn_btn_wide} href="/organizations">
-                                         Organizations
-                                     </Link>
-                                 </div>
-                                 {/* End Center column */}
-
-                                 {/* Right column */}
-                                 <div className="flex flex-col items-center gap-4">
-                                     <button className={str_cn_btn_wide} type="button" onClick={fun_copy_home}>
-                                         {boo_copied ? "Copied!" : "Link to share"}
-                                     </button>
-
-                                     <a className={str_cn_btn_wide} href={str_pdf_path} download>
-                                         PDF
-                                     </a>
-                                 </div>
-                                 {/* End Right column */}
-
-                             </div>
-                         </GlassPanel>
-                    </motion.div>
-                    {/* End Panel 1 */}
-
-
-                    {/* Panel 2 */}
-                    <motion.div
-                        variants={{
-                            hidden      : { opacity:0, y:18 },
-                            show        : { opacity:1, y:0 },
-                        }}
-                    >
-                        <GlassPanel str_tint="purple" className="px-8 py-7">
-                            <div className="grid grid-cols-2 gap-6 sm:gap-8">
-                                <div className="flex flex-col items-center gap-3">
-                                    <div className="min-h-[2.5rem] text-center text-[11px] italic leading-5 text-zinc-300 sm:min-h-0 sm:text-xs sm:text-zinc-400">
-                                        Application for being a panelist in 2027
-                                    </div>
-
-                                    <Link className={str_cn_btn_wide} href="/register">
-                                        Apply
-                                    </Link>
-                                </div>
-
-                                <div className="flex flex-col items-center gap-3">
-                                    <div className="min-h-[2.5rem] text-center text-[11px] italic leading-5 text-zinc-300 sm:min-h-0 sm:text-xs sm:text-zinc-400">
-                                        Doubts/Support/Others?
-                                    </div>
-
-                                    <Link className={str_cn_btn_wide} href="/contact">
-                                        Contact
-                                    </Link>
-                                </div>
-                            </div>
-                        </GlassPanel>
-                    </motion.div>
-                    {/* End Panel 2 */}
-                </motion.div>
-                {/* End Panels */}
             </div>
 
             <style jsx>{`
