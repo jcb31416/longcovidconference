@@ -526,6 +526,16 @@ export default function Home() {
                                     Acceso / Access
                                 </h3>
 
+                                {/* Delay notice */}
+                                <div className="w-full max-w-3xl rounded-2xl border border-amber-400/20 bg-amber-500/[0.08] px-5 py-4 text-center backdrop-blur-sm shadow-[0_10px_24px_rgba(0,0,0,0.28)]">
+                                    <div className="text-[12px] leading-6 text-amber-100 sm:text-sm">
+                                        ⚠️ Se realizará una espera para incorporación, de 17:00h a 17:05h CET (hora Continental Europea, Madrid, Paris).
+                                        Le seguirá el discurso de apertura, de 17:05h a 17:15h.
+                                        La primera ponencia empezará a las <span className="font-semibold text-amber-50">17:15h</span>.
+                                    </div>
+                                </div>
+                                {/* End Delay notice */}
+
                                 <div className="min-h-[2.5rem] max-w-3xl text-center text-[12px] leading-5 text-zinc-200 sm:min-h-0 sm:text-sm">
                                     Pulse el botón azul para acceder al congreso en directo celebrado en Zoom.
                                     En caso de aforo completo, pulse el botón rojo para ver la retransmisión en Youtube (20 segundos en diferido)
