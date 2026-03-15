@@ -529,42 +529,47 @@ export default function Home() {
                                 {/* Delay notice */}
                                 <div className="w-full max-w-3xl rounded-2xl border border-amber-400/20 bg-amber-500/[0.08] px-5 py-4 text-center backdrop-blur-sm shadow-[0_10px_24px_rgba(0,0,0,0.28)]">
                                     <div className="text-[12px] leading-6 text-amber-100 sm:text-sm">
-                                        ⚠️ Se realizará una espera para incorporación, de 17:00h a 17:05h CET (hora Continental Europea, Madrid, Paris).
-                                        Le seguirá el discurso de apertura, de 17:05h a 17:15h.
-                                        La primera ponencia empezará a las <span className="font-semibold text-amber-50">17:15h</span>.
+                                        Gracias a panelistas, por las exposiciones, por las reflexiones y oyentes por asistir y por preguntas de calidad.
+                                        En las próximas semanas se hará el esfuerzo de editar el video del congreso y ponerlo a vuestra disposición.
+                                        Seguramente generaremos un botón que lleve al video en los canales oficiales del congreso. El video se colgará en el canal de youtube @longcovidconference,
+                                        y se anunciará en X, en @longcovidconf.
                                     </div>
                                 </div>
                                 {/* End Delay notice */}
 
-                                <div className="min-h-[2.5rem] max-w-3xl text-center text-[12px] leading-5 text-zinc-200 sm:min-h-0 sm:text-sm">
-                                    Pulse el botón azul para acceder al congreso en directo celebrado en Zoom.
-                                    En caso de aforo completo, pulse el botón rojo para ver la retransmisión en Youtube (20 segundos en diferido)
+                                {/*
+                                  <div className="min-h-[2.5rem] max-w-3xl text-center text-[12px] leading-5 text-zinc-200 sm:min-h-0 sm:text-sm">
+                                      Pulse el botón azul para acceder al congreso en directo celebrado en Zoom.
+                                      En caso de aforo completo, pulse el botón rojo para ver la retransmisión en Youtube (20 segundos en diferido)
 
-                                    <div className="mt-4 min-h-[2.5rem] text-center text-[11px] italic leading-5 text-zinc-300 sm:min-h-0 sm:text-xs sm:text-zinc-400">
-                                        If you would like to follow the conference with subtitles in your language, please use the YouTube stream (20 secs delay)
-                                    </div>
-                                </div>
+                                      <div className="mt-4 min-h-[2.5rem] text-center text-[11px] italic leading-5 text-zinc-300 sm:min-h-0 sm:text-xs sm:text-zinc-400">
+                                          If you would like to follow the conference with subtitles in your language, please use the YouTube stream (20 secs delay)
+                                      </div>
+                                  </div>
 
-                                <div className="flex flex-col items-center gap-4 sm:flex-row sm:justify-center">
-                                    <a
-                                        href="https://zoom.us/j/95575880572?pwd=plpVyWFVrvw86EnFbBKdkJEtgNLMmy.1"
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        className="inline-flex min-w-[160px] items-center justify-center rounded-xl border border-blue-400/30 bg-blue-500/20 px-6 py-2 text-sm font-semibold text-blue-100 transition hover:bg-blue-500/30 active:scale-[0.99] focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-300/40"
-                                    >
-                                        Zoom
-                                    </a>
+                                  <div className="flex flex-col items-center gap-4 sm:flex-row sm:justify-center">
+                                      <a
+                                          href="https://zoom.us/j/95575880572?pwd=plpVyWFVrvw86EnFbBKdkJEtgNLMmy.1"
+                                          target="_blank"
+                                          rel="noopener noreferrer"
+                                          className="inline-flex min-w-[160px] items-center justify-center rounded-xl border border-blue-400/30 bg-blue-500/20 px-6 py-2 text-sm font-semibold text-blue-100 transition hover:bg-blue-500/30 active:scale-[0.99] focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-300/40"
+                                      >
+                                          Zoom
+                                      </a>
 
-                                    <a
-                                        href="rtmp://a.rtmp.youtube.com/live2"
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        className="inline-flex min-w-[160px] items-center justify-center gap-2 rounded-xl border border-red-400/30 bg-red-500/20 px-6 py-2 text-sm font-semibold text-red-100 transition hover:bg-red-500/30 active:scale-[0.99] focus:outline-none focus-visible:ring-2 focus-visible:ring-red-300/40"
-                                    >
-                                        <span aria-hidden="true">▶</span>
-                                        <span>Youtube</span>
-                                    </a>
-                                </div>
+                                      <a
+                                          href="rtmp://a.rtmp.youtube.com/live2"
+                                          target="_blank"
+                                          rel="noopener noreferrer"
+                                          className="inline-flex min-w-[160px] items-center justify-center gap-2 rounded-xl border border-red-400/30 bg-red-500/20 px-6 py-2 text-sm font-semibold text-red-100 transition hover:bg-red-500/30 active:scale-[0.99] focus:outline-none focus-visible:ring-2 focus-visible:ring-red-300/40"
+                                      >
+                                          <span aria-hidden="true">▶</span>
+                                          <span>Youtube</span>
+                                      </a>
+                                  </div>
+                                */}
+
+
                             </section>
                             {/* end section: access */}
 
