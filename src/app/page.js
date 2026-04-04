@@ -4,6 +4,7 @@ import Image                          from "next/image";
 import Link                           from "next/link";
 import { motion }                     from "framer-motion";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { Play }                       from "lucide-react";
 
 import GlassPanel                     from "@/components/GlassPanel.jsx";
 // import Virusbglayer                   from "@/components/Virusbglayer.jsx";
@@ -42,7 +43,7 @@ const arr_ticker_items                = [
     { type:"logo",  src:"/logos/logo_movili.png",       alt:"Movili",     title:"Movilización Persistente" },
     { type:"logo",  src:"/logos/logo_renegade.png",     alt:"Renegade",   title:"Renegade Research", str_cn:"h-5" },
     { type:"logo",  src:"/logos/logo_ateava.png",       alt:"Ateava",     title:"ATEAVA", str_cn:"h-5" },
-
+    { type:"logo",  src:"/logos/logo_kolektiboa.png",   alt:"Kolek",      title:"Long COVID Kolektiboa" },
     { type:"sep" },
 ];
 
@@ -527,15 +528,41 @@ export default function Home() {
                                 </h3>
 
                                 {/* Delay notice */}
-                                <div className="w-full max-w-3xl rounded-2xl border border-amber-400/20 bg-amber-500/[0.08] px-5 py-4 text-center backdrop-blur-sm shadow-[0_10px_24px_rgba(0,0,0,0.28)]">
-                                    <div className="text-[12px] leading-6 text-amber-100 sm:text-sm">
-                                        Gracias a panelistas, por las exposiciones, por las reflexiones y oyentes por asistir y por preguntas de calidad.
-                                        En las próximas semanas se hará el esfuerzo de editar el video del congreso y ponerlo a vuestra disposición.
-                                        Seguramente generaremos un botón que lleve al video en los canales oficiales del congreso. El video se colgará en el canal de youtube @longcovidconference,
-                                        y se anunciará en X, en @longcovidconf.
+                                {/*
+                                  <div className="w-full max-w-3xl rounded-2xl border border-amber-400/20 bg-amber-500/[0.08] px-5 py-4 text-center backdrop-blur-sm shadow-[0_10px_24px_rgba(0,0,0,0.28)]">
+                                      <div className="text-[12px] leading-6 text-amber-100 sm:text-sm">
+                                          Gracias a los panelistas, por las exposiciones, por las reflexiones y oyentes por asistir y por preguntas de calidad.
+                                          Sendos botones redirigen al canal de youtube @longcovidconference donde están publicados los videos del congreso,
+                                          y a la cuenta de X, en @longcovidconf, donde se publican novedades de interés relacionado.
+                                      </div>
+                                  </div>
+                                */}
+
+                                {/* End Delay notice */}
+
+                                <div className="grid w-full grid-cols-1 gap-6 md:grid-cols-2 md:gap-12">
+                                    <div className="flex flex-col items-center gap-3">
+                                        <div className="min-h-[2.5rem] text-center text-[11px] italic leading-5 text-zinc-300 sm:min-h-0 sm:text-xs sm:text-zinc-400">
+                                            Published videos
+                                        </div>
+
+                                        <Link className={str_cn_btn_wide} href="https://www.youtube.com/channel/UCvVyoQ5Y1vTclts5-evC-IQ">
+                                            <Play className="h-3.5 w-3.5" fill="currentColor" />
+                                        </Link>
+                                    </div>
+
+                                    <div className="flex flex-col items-center gap-3">
+                                        <div className="min-h-[2.5rem] text-center text-[11px] italic leading-5 text-zinc-300 sm:min-h-0 sm:text-xs sm:text-zinc-400">
+                                            News, updates
+                                        </div>
+
+                                        <Link className={str_cn_btn_wide} href="https://x.com/longcovidconf">
+                                            X account
+                                        </Link>
                                     </div>
                                 </div>
-                                {/* End Delay notice */}
+
+
 
                                 {/*
                                   <div className="min-h-[2.5rem] max-w-3xl text-center text-[12px] leading-5 text-zinc-200 sm:min-h-0 sm:text-sm">

@@ -1,6 +1,7 @@
 "use client";
 
 import MDrenderer                       from "@/components/MDrenderer.jsx";
+import { Play }                         from "lucide-react";
 
 function fun_get_item_cn(str_type) {
     if (str_type === "opening") {
@@ -33,6 +34,10 @@ function fun_get_badge(str_type) {
 
     return null;
 } //endfun fun_get_badge
+
+
+
+
 
 function ProgramItem({ dic_item }) {
     const str_badge                     = fun_get_badge(dic_item.str_type);
@@ -73,6 +78,49 @@ function ProgramItem({ dic_item }) {
     );
 } //endfun ProgramItem
 
+
+
+
+
+// function ProgramBlock({ dic_block, int_index }) {
+//     return (
+//         <section className="rounded-2xl border border-white/10 bg-black/20 px-5 py-5 md:px-6 md:py-6">
+//             {/* Block header */}
+//             <div className="mb-5 flex flex-wrap items-center gap-3">
+//                 <div className="rounded-full border border-white/10 bg-white/[0.05] px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.22em] text-zinc-400">
+//                     Block {int_index + 1}
+//                 </div>
+//
+//                 <h3 className="text-lg font-semibold italic text-zinc-100">
+//                     {dic_block.title}
+//                 </h3>
+//             </div>
+//             {/* End Block header */}
+//
+//             {dic_block.subtitle ? (
+//                 <>
+//                     {/* Block subtitle */}
+//                     <div className="mb-5 text-sm italic text-zinc-400">
+//                         {dic_block.subtitle}
+//                     </div>
+//                     {/* End Block subtitle */}
+//                 </>
+//             ) : null}
+//
+//             {/* Block items */}
+//             <div className="space-y-6">
+//                 {dic_block.lis_items.map((dic_item, idx) => (
+//                     <ProgramItem
+//                         key={`${dic_block.title}_${dic_item.time}_${idx}`}
+//                         dic_item={dic_item}
+//                     />
+//                 ))}
+//             </div>
+//             {/* End Block items */}
+//         </section>
+//     );
+// } //endfun ProgramBlock
+
 function ProgramBlock({ dic_block, int_index }) {
     return (
         <section className="rounded-2xl border border-white/10 bg-black/20 px-5 py-5 md:px-6 md:py-6">
@@ -108,9 +156,45 @@ function ProgramBlock({ dic_block, int_index }) {
                 ))}
             </div>
             {/* End Block items */}
+
+            {/* Video of the block */}
+            {dic_block.url_video ? (
+                <>
+                    {/* Block video button */}
+                    <div className="mt-6">
+                        <a
+                            href={dic_block.url_video}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex min-w-[120px] items-center justify-center gap-2 rounded-xl border border-white/15 bg-white/5 px-6 py-2 text-sm text-zinc-200 transition hover:bg-white/10"
+                        >
+                            <span>
+                                video
+                            </span>
+                            <Play className="h-3.5 w-3.5" fill="currentColor" />
+                        </a>
+                    </div>
+                    {/* End Block video button */}
+                </>
+            ) : null}
+            {/* end Video of the block */}
+
         </section>
     );
 } //endfun ProgramBlock
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 export default function ConferenceProgram({ dic_program }) {
     if (!dic_program) {

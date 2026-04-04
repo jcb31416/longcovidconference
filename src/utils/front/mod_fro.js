@@ -13,25 +13,40 @@ export function funfro_parse_program_markdown(str_md_in = "") {
         return String(str_value ?? "").replace(/[–—]/g, "-");
     } //endfun fun_norm_dash
 
+
     function fun_is_hr(str_line) {
         return /^\s*---+\s*$/.test(str_line);
     } //endfun fun_is_hr
+
 
     function fun_is_h3_program(str_line) {
         return /^\s*#{3}\s+Programa\s*$/i.test(str_line);
     } //endfun fun_is_h3_program
 
+
     function fun_is_h3_structure(str_line) {
         return /^\s*#{3}\s+Estructura\s*$/i.test(str_line);
     } //endfun fun_is_h3_structure
+
 
     function fun_is_h4_block(str_line) {
         return /^\s*#{4}\s+/.test(str_line);
     } //endfun fun_is_h4_block
 
+
     function fun_parse_block_title(str_line) {
         return clean(str_line.replace(/^\s*#{4}\s+/, ""));
     } //endfun fun_parse_block_title
+
+
+    function fun_parse_block_video_url(str_line) {
+        const mat_video                 = String(str_line ?? "").match(   /^\s*url_video\s*=\s*(https?:\/\/\S+)\s*$/i   );
+
+        if (!mat_video) {   return null;   } //endif
+        return clean(mat_video[1]);
+    } //endfun fun_parse_block_video_url
+
+
 
 
 
@@ -113,6 +128,8 @@ export function funfro_parse_program_markdown(str_md_in = "") {
         if (!dic_block_current) {
             dic_block_current         = {
                 title                 : "Programa",
+                subtitle              : "",
+                url_video             : null,
                 lis_items             : [],
             };
             lis_blocks.push(dic_block_current);
@@ -160,6 +177,7 @@ export function funfro_parse_program_markdown(str_md_in = "") {
         } //endif pre-program
 
         if (boo_in_program) {
+
             if (fun_is_h3_structure(str_line_trim)) {
                 fun_push_block_current();
                 boo_in_program       = false;
@@ -178,17 +196,42 @@ export function funfro_parse_program_markdown(str_md_in = "") {
                 continue;
             } //endif hr
 
+
             if (fun_is_h4_block(str_line_trim)) {
                 fun_push_block_current();
 
                 dic_block_current    = {
                     title            : fun_parse_block_title(str_line_trim),
+                    subtitle         : "",
+                    url_video        : null,
                     lis_items        : [],
                 };
 
                 lis_blocks.push(dic_block_current);
                 continue;
             } //endif block
+
+            // video ==============================
+            const str_block_video_url = fun_parse_block_video_url(str_line_trim);
+
+            if (str_block_video_url) {
+                fun_push_item_current();
+
+                if (!dic_block_current) {
+                    dic_block_current    = {
+                        title            : "Programa",
+                        subtitle         : "",
+                        url_video        : null,
+                        lis_items        : [],
+                    };
+                    lis_blocks.push(dic_block_current);
+                } //endif
+
+                dic_block_current.url_video = str_block_video_url;
+                continue;
+            } //endif block video url
+            // end video ===========================
+
 
             const dic_header         = fun_parse_session_header(str_line_trim);
 

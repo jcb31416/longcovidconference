@@ -79,6 +79,13 @@ const lis_orgs_affiliated               = [
         str_logo                        : "/logos/logo_renegade.png",
         str_logo_alt                    : "Renegade Research logo",
     },
+    {
+        str_name                        : "Long COVID Kolektiboa",
+        str_desc                        : "Collective initiative bringing together patients, researchers, and advocates focused on Long COVID and related conditions. It promotes collaboration, knowledge sharing, and patient-driven perspectives to advance understanding, care, and recognition of complex chronic illnesses.",
+        str_url                         : "https://www.renegade-research.org/",
+        str_logo                        : "/logos/logo_kolektiboa.png",
+        str_logo_alt                    : "Long COVID Kolektiboa logo",
+    },
 
 ]; //endlis lis_orgs_affiliated
 

@@ -112,6 +112,29 @@ export default function ConferencePage() {
 
 
 
+    const str_first_video_url          = useMemo(() => {
+        if (!dic_program_parsed?.lis_blocks?.length) {
+            return null;
+        } //endif
+
+        const dic_block_video          = dic_program_parsed.lis_blocks.find(
+            (dic_block) => typeof dic_block?.url_video === "string" && dic_block.url_video.trim()
+        );
+
+        return dic_block_video?.url_video ?? null;
+    }, [dic_program_parsed]);
+
+    const str_cta_href                 = str_first_video_url
+        || dic_conf?.dic_urls?.event
+        || dic_conf?.dic_urls?.about
+        || "#";
+
+    const str_cta_label                = str_first_video_url
+        ? "Video"
+        : "Access";
+
+
+
 
     const lis_speaker_names  = useMemo(() => {
         if (!dic_conf) {
@@ -219,12 +242,12 @@ export default function ConferencePage() {
                         </Link>
 
                         <a
-                          href={dic_conf?.dic_urls?.event || dic_conf?.dic_urls?.about || "#"}
+                          href={str_cta_href}
                           target="_blank"
                           rel="noopener noreferrer"
                           className="inline-flex min-w-[120px] items-center justify-center rounded-xl border border-white/15 bg-white/5 px-6 py-2 text-sm text-zinc-200 transition hover:bg-white/10"
                         >
-                          Access
+                          {str_cta_label}
                         </a>
                       </div>
                     </GlassPanel>
